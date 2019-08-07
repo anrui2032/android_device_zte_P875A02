@@ -11,3 +11,6 @@
 
 # Partitions
 /dev/block/platform/soc/1d84000\.ufshc/by-name/logdump        u:object_r:logdump_block_device:s0
+
+# WiFi
+/vendor/bin/wifi-mac-generator                                u:object_r:wifi-mac-generator_exec:s0

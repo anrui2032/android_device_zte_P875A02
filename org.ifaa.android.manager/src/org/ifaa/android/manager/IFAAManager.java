@@ -1,5 +1,6 @@
 package org.ifaa.android.manager;
 
+import android.annotation.UnsupportedAppUsage;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ServiceConnection;
@@ -38,14 +39,19 @@ public abstract class IFAAManager {
         }
     };
 
+    @UnsupportedAppUsage
     public abstract String getDeviceModel();
 
+    @UnsupportedAppUsage
     public abstract int getSupportBIOTypes(Context context);
 
+    @UnsupportedAppUsage
     public abstract int getVersion();
 
+    @UnsupportedAppUsage
     public abstract int startBIOManager(Context context, int i);
 
+    @UnsupportedAppUsage
     public byte[] processCmd(Context context, byte[] param) {
         byte[] response = null;
         try {
@@ -59,6 +65,7 @@ public abstract class IFAAManager {
         }
     }
 
+    @UnsupportedAppUsage
     public static byte[] processCmdBinder(Context context, byte[] param) {
         byte[] response = null;
         try {

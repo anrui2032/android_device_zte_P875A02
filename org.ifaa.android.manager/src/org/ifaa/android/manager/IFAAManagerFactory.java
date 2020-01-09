@@ -1,5 +1,6 @@
 package org.ifaa.android.manager;
 
+import android.annotation.UnsupportedAppUsage;
 import android.content.Context;
 import android.util.Log;
 
@@ -7,6 +8,7 @@ public class IFAAManagerFactory {
     private static final String TAG = "IFAAManagerInstance";
     private static IFAAManager ifaaManager;
 
+    @UnsupportedAppUsage
     public static IFAAManager getIFAAManager(Context context, int authType) {
         if (ifaaManager == null) {
             if (IFAAUtil.ZTE_IFAA_VERSION == 4) {

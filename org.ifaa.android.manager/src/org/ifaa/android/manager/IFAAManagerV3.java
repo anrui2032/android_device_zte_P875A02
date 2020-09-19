@@ -1,6 +1,6 @@
 package org.ifaa.android.manager;
 
-import android.annotation.UnsupportedAppUsage;
+import android.compat.annotation.UnsupportedAppUsage;
 
 public abstract class IFAAManagerV3 extends IFAAManagerV2 {
     public static final String KEY_FINGERPRINT_FULLVIEW = "org.ifaa.ext.key.CUSTOM_VIEW";

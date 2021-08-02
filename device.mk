@@ -37,6 +37,11 @@ AB_OTA_POSTINSTALL_CONFIG += \
     FILESYSTEM_TYPE_system=ext4 \
     POSTINSTALL_OPTIONAL_system=true
 
+# Boot Control
+PRODUCT_PACKAGES += \
+    bootctrl.lahaina \
+    bootctrl.lahaina.recovery
+
 # DTB
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/dtb.img:dtb.img

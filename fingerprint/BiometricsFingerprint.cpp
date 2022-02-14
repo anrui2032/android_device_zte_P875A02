@@ -27,6 +27,9 @@
 #include <thread>
 #include <unistd.h>
 
+#define CMD_FINGER_DOWN 1
+#define CMD_FINGER_UP 0
+
 #define FOD_UI_PATH "/sys/devices/platform/soc/soc:qcom,dsi-display-primary/fod_ui"
 
 namespace android {
@@ -71,6 +74,15 @@ BiometricsFingerprint::BiometricsFingerprint() : mClientCallback(nullptr), mDevi
     }
 
     std::thread([this]() {
+        unsigned int cmd;
+
+        while (true) {
+            mCmdQueue.pop(cmd);
+            mDevice->sendCustomizedCommand(mDevice, 10, cmd);
+        }
+    }).detach();
+
+    std::thread([this]() {
         int fd = open(FOD_UI_PATH, O_RDONLY);
         if (fd < 0) {
             LOG(ERROR) << "failed to open fd, err: " << fd;
@@ -90,9 +102,8 @@ BiometricsFingerprint::BiometricsFingerprint() : mClientCallback(nullptr), mDevi
                 continue;
             }
 
-            if (readBool(fd)) {
-                mDevice->sendCustomizedCommand(mDevice, 10, readBool(fd) ? 1 : 0);
-            }
+            mCmdQueue.push(readBool(fd) ? CMD_FINGER_DOWN
+                                        : CMD_FINGER_UP);
         }
     }).detach();
 }

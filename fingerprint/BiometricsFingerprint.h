@@ -26,6 +26,8 @@
 
 #include "fingerprint.h"
 
+#include "concurrent_queue.h"
+
 namespace android {
 namespace hardware {
 namespace biometrics {
@@ -78,6 +80,7 @@ private:
     std::mutex mClientCallbackMutex;
     sp<IBiometricsFingerprintClientCallback> mClientCallback;
     fingerprint_device_t *mDevice;
+    concurrent_queue<unsigned int> mCmdQueue;
 };
 
 }  // namespace implementation

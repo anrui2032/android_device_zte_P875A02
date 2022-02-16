@@ -278,7 +278,8 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     android.hardware.sensors-service.multihal \
-    libsensorndkbridge
+    libsensorndkbridge \
+    sensors.P875A02
 
 # Shipping API
 PRODUCT_SHIPPING_API_LEVEL := 30

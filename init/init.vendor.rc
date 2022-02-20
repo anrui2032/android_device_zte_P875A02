@@ -192,6 +192,8 @@ on boot
     chown system system /sys/class/sensor/sar_sensor/sar1_sensor/calibrate
     chmod 0664 /sys/class/sensor/sar_sensor/sar1_sensor/calibrate
 
+    chown system system /sys/devices/platform/goodix_ts.0/goodix_fod_pressed
+
 # add i2c permissions
 on post-fs
    mkdir /mnt/vendor/persist/keybox 0755 root root
@@ -511,3 +513,5 @@ on property:sys.boot_completed=1
     chmod 0644 /mnt/vendor/persist/camera_ois/oisbu63169
     chown system cameraserver /mnt/vendor/persist/camera_ois/ois_lc898128
     chmod 0644 /mnt/vendor/persist/camera_ois/ois_lc898128
+
+    setprop persist.vendor.sys.singletap 1

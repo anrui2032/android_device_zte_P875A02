@@ -56,6 +56,7 @@ TARGET_BOOTLOADER_BOARD_NAME := lahaina
 BUILD_BROKEN_DUP_RULES := true
 
 # Display
+SOONG_CONFIG_qtidisplay_udfps := true
 TARGET_SCREEN_DENSITY := 480
 
 # FSConfig

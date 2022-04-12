@@ -176,7 +176,6 @@ PRODUCT_PACKAGES += \
     init.recovery.qcom.rc \
     init.target.rc \
     init.vendor.rc \
-    init.vendor.usb.rc \
     ueventd.qcom.rc
 
 # Kernel
@@ -323,6 +322,9 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     android.hardware.usb-service.qti
+
+PRODUCT_SOONG_NAMESPACES += \
+    vendor/qcom/opensource/usb/etc
 
 # Update Engine
 PRODUCT_PACKAGES += \

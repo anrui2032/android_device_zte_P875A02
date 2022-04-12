@@ -204,7 +204,6 @@ ro.soc.manufacturer=QTI
 persist.vendor.ssr.restart_level=ALL_ENABLE
 
 # USB
-ro.vendor.product.ztename=ZTE Axon 30 Pro 5G
 sys.usb.mtp.batchcancel=1
 vendor.usb.diag.func.name=ffs
 vendor.usb.dpl.inst.name=dpl

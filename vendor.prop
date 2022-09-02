@@ -205,7 +205,13 @@ persist.vendor.ssr.restart_level=ALL_ENABLE
 ro.vendor.product.ztename=ZTE Axon 30 Pro 5G
 sys.usb.mtp.batchcancel=1
 vendor.usb.diag.func.name=ffs
+vendor.usb.dpl.inst.name=dpl
+vendor.usb.qdss.inst.name=qdss_sw
+vendor.usb.rmnet.func.name=gsi
+vendor.usb.rmnet.inst.name=rmnet
+vendor.usb.rndis.func.name=gsi
 vendor.usb.use_ffs_mtp=1
+vendor.usb.use_gadget_hal=0
 
 # Zygote
 zygote.critical_window.minute=10

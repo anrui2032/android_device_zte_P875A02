@@ -288,6 +288,7 @@ PRODUCT_PACKAGES += \
     TelephonyResCommon \
     WifiResCommon \
     WifiResTarget \
+    ZTEApertureRes \
     ZTEFrameworksRes \
     ZTELineageSDKRes \
     ZTELineageSettingsRes \

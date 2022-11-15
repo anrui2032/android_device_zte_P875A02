@@ -297,7 +297,6 @@ PRODUCT_PACKAGES += \
     ZTEFrameworksRes \
     ZTELineageSDKRes \
     ZTELineageSettingsRes \
-    ZTELineageSystemUIRes \
     ZTESettingsRes \
     ZTESettingsProviderRes \
     ZTESystemUIRes

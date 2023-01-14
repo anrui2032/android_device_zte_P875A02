@@ -303,8 +303,7 @@ PRODUCT_PACKAGES += \
     ZTELineageSystemUIRes \
     ZTESettingsRes \
     ZTESettingsProviderRes \
-    ZTESystemUIRes \
-    aptxalsOverlay
+    ZTESystemUIRes
 
 # Partitions
 PRODUCT_USE_DYNAMIC_PARTITIONS := true

@@ -6,3 +6,7 @@
 
 # Fingerprint
 /dev/goodix_fp            0660   system     system
+
+# NFC
+/dev/st21nfc              0660   nfc        system
+/dev/st54spi              0660   nfc        system

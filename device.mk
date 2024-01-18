@@ -83,7 +83,7 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     android.hardware.biometrics.face-service.P875A02 \
-    android.hardware.biometrics.fingerprint@2.3-service.P875A02
+    android.hardware.biometrics.fingerprint-service.P875A02
 
 $(call soong_config_set,surfaceflinger,udfps_lib,//$(LOCAL_PATH):libudfps_extension.P875A02)
 

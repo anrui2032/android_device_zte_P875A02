@@ -6,8 +6,3 @@
 
 PRODUCT_MAKEFILES := \
     $(LOCAL_DIR)/lineage_P875A02.mk
-
-COMMON_LUNCH_CHOICES := \
-    lineage_P875A02-eng \
-    lineage_P875A02-user \
-    lineage_P875A02-userdebug

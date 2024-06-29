@@ -60,6 +60,14 @@ fi
 
 function blob_fixup() {
     case "${1}" in
+    vendor/etc/media_codecs.xml)
+    [ "$2" = "" ] && return 0
+        sed -Ei "/media_codecs_(google_audio|google_telephony|google_video|vendor_audio)/d" "${2}"
+        ;;
+    vendor/etc/media_codecs_lahaina_vendor.xml)
+    [ "$2" = "" ] && return 0
+        sed -Ei "/media_codecs_(google_audio|google_telephony|google_video|vendor_audio)/d" "${2}"
+        ;;
     vendor/etc/wifi/wlan/WCNSS_qcom_cfg.ini)
     [ "$2" = "" ] && return 0
         sed -i '/^END$/i read_mac_addr_from_mac_file=1' "${2}"

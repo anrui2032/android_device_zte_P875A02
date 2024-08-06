@@ -863,7 +863,7 @@ system_ext/lib64/lib-imsvtutils.so
 system_ext/lib64/libimscamera_jni.so
 system_ext/lib64/libimsmedia_jni.so
 system_ext/lib64/vendor.qti.imsrtpservice@3.0.so
-system_ext/priv-app/ims/ims.apk|7b69a1663efe2f3ae3befbfbee0f0aab35fdd122
+system_ext/priv-app/ims/ims.apk
 vendor/bin/ims_rtp_daemon
 vendor/bin/imsdaemon
 vendor/etc/init/dataadpl.rc

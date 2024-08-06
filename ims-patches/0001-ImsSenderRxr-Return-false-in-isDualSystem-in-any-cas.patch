@@ -1,0 +1,26 @@
+From 473799b9b8ff38ee1c64855298ecf3ef275b484a Mon Sep 17 00:00:00 2001
+From: anrui2032 <anrui2032@gmail.com>
+Date: Fri, 26 Jun 2026 06:18:53 +0800
+Subject: [PATCH 1/2] ImsSenderRxr: Return false in isDualSystem in any case
+
+Change-Id: I16204118853273db6c3332dcca1664552998c1c7
+---
+ smali/org/codeaurora/ims/ImsSenderRxr.smali | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/smali/org/codeaurora/ims/ImsSenderRxr.smali b/smali/org/codeaurora/ims/ImsSenderRxr.smali
+index f398b0d..387abbf 100644
+--- a/smali/org/codeaurora/ims/ImsSenderRxr.smali
++++ b/smali/org/codeaurora/ims/ImsSenderRxr.smali
+@@ -1586,7 +1586,7 @@
+     .locals 1
+ 
+     .line 3553
+-    sget-boolean v0, Lcom/android/server/CrossContainerCommonUtils;->ZTE_FEATURE_FOR_CELL:Z
++    const/4 v0, 0x0
+ 
+     return v0
+ .end method
+-- 
+2.47.3
+

@@ -1,0 +1,29 @@
+From c2c73253a5828f34f18a471779f126f9d5af5a2b Mon Sep 17 00:00:00 2001
+From: anrui2032 <anrui2032@gmail.com>
+Date: Fri, 26 Jun 2026 06:21:35 +0800
+Subject: [PATCH 2/2] ImsCallSessionImpl: Return false in handleClearCodeNotify
+ in any case
+
+Change-Id: I91356640fd4209754e910d28ede5b571237acc4c
+---
+ smali/org/codeaurora/ims/ImsCallSessionImpl.smali | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/smali/org/codeaurora/ims/ImsCallSessionImpl.smali b/smali/org/codeaurora/ims/ImsCallSessionImpl.smali
+index 78b6470..a7a630d 100644
+--- a/smali/org/codeaurora/ims/ImsCallSessionImpl.smali
++++ b/smali/org/codeaurora/ims/ImsCallSessionImpl.smali
+@@ -6353,9 +6353,7 @@
+     .param p1, "dc"    # Lorg/codeaurora/ims/DriverCallIms;
+ 
+     .line 3267
+-    invoke-static {}, Lcom/zte/PlatformConfig;->isMxtelProject()Z
+-
+-    move-result v0
++    const/4 v0, 0x0
+ 
+     if-eqz v0, :cond_0
+ 
+-- 
+2.47.3
+

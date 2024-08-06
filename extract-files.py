@@ -42,6 +42,8 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    'system_ext/priv-app/ims/ims.apk': blob_fixup()
+        .apktool_patch('ims-patches'),
     ('vendor/etc/wifi/wlan/WCNSS_qcom_cfg.ini'): blob_fixup()
         .regex_replace('\nEND', '\nread_mac_addr_from_mac_file=1\nEND'),
     ('vendor/etc/media_codecs.xml'): blob_fixup()

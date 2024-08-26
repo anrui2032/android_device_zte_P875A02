@@ -143,7 +143,9 @@ PRODUCT_PACKAGES += \
     vendor.display.config@2.0 \
     vendor.lineage.livedisplay@2.0-service-sdm \
     vendor.qti.hardware.display.allocator-service \
-    vendor.qti.hardware.display.composer-service
+    vendor.qti.hardware.display.composer-service \
+    vendor.qti.hardware.display.composer-service.rc \
+    vendor.qti.hardware.display.composer-service.xml
 
 # Fastboot
 PRODUCT_PACKAGES += \

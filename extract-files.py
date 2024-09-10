@@ -70,6 +70,8 @@ blob_fixups: blob_fixups_user_type = {
     'vendor/lib64/hw/fingerprint.lahaina.so': blob_fixup()
         .binary_regex_replace(b'libfingerprint.default.so\x00', b'fingerprint.lahaina.so\x00\x00\x00\x00')
         .binary_regex_replace(b'fingerprint.gf95xx\x00', b'fingerprint\x00\x00\x00\x00\x00\x00\x00\x00'),
+    ('vendor/lib64/mediadrm/libwvdrmengine.so', 'vendor/lib64/libwvhidl.so'): blob_fixup()
+        .add_needed('libcrypto_shim.so'),
 }  # fmt: skip
 
 module = ExtractUtilsModule(

@@ -111,6 +111,7 @@ vendor.display.enable_async_powermode=0
 vendor.display.enable_optimize_refresh=1
 
 # Fingerprint
+persist.vendor.fingerprint.sensor_location=540|2068|94
 ro.vendor.feature.fingerprint_sensorui_position_center_r=94
 ro.vendor.feature.fingerprint_sensorui_position_center_x=540
 ro.vendor.feature.fingerprint_sensorui_position_center_y=2068

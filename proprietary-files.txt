@@ -652,7 +652,7 @@ vendor/lib64/libremosaic_ov16a1q.so
 vendor/lib64/libremosaic_s5kgw3sp13.so
 vendor/lib64/libremosaic_wrapper.so
 vendor/lib64/libremosaiclib.so
-vendor/lib64/libskia.so;MODULE_SUFFIX=-vendor
+vendor/lib64/libskia.so;MODULE_SUFFIX=_vendor
 vendor/lib64/libskia_watermark.so
 vendor/lib64/libswregistrationalgo.so
 vendor/lib64/libsynx.so
@@ -701,7 +701,7 @@ system_ext/lib64/vendor.qti.hardware.dpmservice@1.0.so
 system_ext/priv-app/dpmserviceapp/dpmserviceapp.apk
 vendor/bin/dpmQmiMgr
 vendor/etc/init/dpmQmiMgr.rc
-vendor/lib64/com.qualcomm.qti.dpm.api@1.0.so;MODULE_SUFFIX=-vendor
+vendor/lib64/com.qualcomm.qti.dpm.api@1.0.so;MODULE_SUFFIX=_vendor
 vendor/lib64/libdpmqmihal.so
 
 # Data
@@ -749,7 +749,7 @@ vendor/etc/init/vendor.qti.diag.rc
 vendor/etc/vintf/manifest/vendor.qti.diag.hal.service.xml
 vendor/lib/libdiag.so
 vendor/lib64/libdiag.so
-vendor/lib64/vendor.qti.diaghal@1.0.so;MODULE_SUFFIX=-vendor
+vendor/lib64/vendor.qti.diaghal@1.0.so;MODULE_SUFFIX=_vendor
 
 # Display - from spacewar - U2.6-240904-1634
 vendor/bin/hw/vendor.display.color@1.0-service|cd08e02010826714d52e44d655a33faf537e076d
@@ -937,7 +937,7 @@ vendor/lib64/vendor.qti.ims.rcsconfig@1.1.so
 vendor/lib64/vendor.qti.ims.rcsconfig@2.0.so
 vendor/lib64/vendor.qti.ims.rcsconfig@2.1.so
 vendor/lib64/vendor.qti.imsrtpservice@3.0-service-Impl.so
-vendor/lib64/vendor.qti.imsrtpservice@3.0.so;MODULE_SUFFIX=-vendor
+vendor/lib64/vendor.qti.imsrtpservice@3.0.so;MODULE_SUFFIX=_vendor
 
 # Initialization
 vendor/bin/init.kernel.post_boot-lahaina.sh
@@ -977,8 +977,8 @@ vendor/lib64/vendor.qti.hardware.factory@1.0.so
 vendor/lib64/vendor.qti.hardware.factory@1.1.so
 
 # MM OSAL
-vendor/lib/libmmosal.so;MODULE_SUFFIX=-vendor
-vendor/lib64/libmmosal.so;MODULE_SUFFIX=-vendor
+vendor/lib/libmmosal.so;MODULE_SUFFIX=_vendor
+vendor/lib64/libmmosal.so;MODULE_SUFFIX=_vendor
 
 # Media
 system_ext/lib64/libmmosal.so
@@ -1206,7 +1206,6 @@ vendor/lib64/vendor.qti.hardware.data.connection@1.0.so
 vendor/lib64/vendor.qti.hardware.data.connection@1.1.so
 vendor/lib64/vendor.qti.hardware.data.iwlan@1.0.so
 vendor/lib64/vendor.qti.hardware.data.lce@1.0.so
-vendor/lib64/vendor.qti.hardware.data.qmi@1.0.so
 vendor/lib64/vendor.qti.hardware.radio.am@1.0.so
 vendor/lib64/vendor.qti.hardware.radio.ims@1.0.so
 vendor/lib64/vendor.qti.hardware.radio.ims@1.1.so

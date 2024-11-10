@@ -75,14 +75,16 @@ Return<bool> BiometricsFingerprint::isUdfps(uint32_t) {
 }
 
 Return<void> BiometricsFingerprint::onFingerDown(uint32_t, uint32_t, float, float) {
+    ALOGD("onFingerDown()");
     mDevice->sendCustomizedCommand(mDevice, 10, CMD_FINGER_DOWN);
     android::base::WriteStringToFile(LCD_HBM_ON, LCD_HBM_PATH);
     return Void();
 }
 
 Return<void> BiometricsFingerprint::onFingerUp() {
-    android::base::WriteStringToFile(LCD_HBM_OFF, LCD_HBM_PATH);
+    ALOGD("onFingerUp()");
     mDevice->sendCustomizedCommand(mDevice, 10, CMD_FINGER_UP);
+    android::base::WriteStringToFile(LCD_HBM_OFF, LCD_HBM_PATH);
     return Void();
 }
 
@@ -197,6 +199,7 @@ Return<uint64_t> BiometricsFingerprint::getAuthenticatorId() {
 }
 
 Return<RequestStatus> BiometricsFingerprint::cancel() {
+    onFingerUp();
     return ErrorFilter(mDevice->cancel(mDevice));
 }
 
@@ -320,6 +323,9 @@ void BiometricsFingerprint::notify(const fingerprint_msg_t *msg) {
                     msg->data.enroll.samples_remaining).isOk()) {
                 ALOGE("failed to invoke fingerprint onEnrollResult callback");
             }
+            if (msg->data.enroll.samples_remaining == 0) {
+                thisPtr->onFingerUp();
+            }
             break;
         case FINGERPRINT_TEMPLATE_REMOVED:
             ALOGD("onRemove(fid=%d, gid=%d, rem=%d)",
@@ -358,6 +364,7 @@ void BiometricsFingerprint::notify(const fingerprint_msg_t *msg) {
                     ALOGE("failed to invoke fingerprint onAuthenticated callback");
                 }
             }
+            thisPtr->onFingerUp();
             break;
         case FINGERPRINT_TEMPLATE_ENUMERATING:
             ALOGD("onEnumerate(fid=%d, gid=%d, rem=%d)",

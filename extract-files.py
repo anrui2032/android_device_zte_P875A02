@@ -46,12 +46,10 @@ blob_fixups: blob_fixups_user_type = {
         .apktool_patch('ims-patches'),
     ('vendor/etc/wifi/wlan/WCNSS_qcom_cfg.ini'): blob_fixup()
         .regex_replace('\nEND', '\nread_mac_addr_from_mac_file=1\nEND'),
-    ('vendor/etc/media_codecs.xml'): blob_fixup()
+    ('vendor/etc/media_codecs.xml', 'vendor/etc/media_codecs_lahaina_vendor.xml'): blob_fixup()
         .regex_replace('.*media_codecs_(google_audio|google_c2|google_telephony|google_video|vendor_audio).*\n', '')
-        .regex_replace('.*media_codecs_google_c2.*\n', ''),
-    ('vendor/etc/media_codecs_lahaina_vendor.xml'): blob_fixup()
-        .regex_replace('.*media_codecs_(google_audio|google_c2|google_telephony|google_video|vendor_audio).*\n', '')
-        .regex_replace('.*media_codecs_google_c2.*\n', ''),
+        .regex_replace('.*media_codecs_google_c2.*\n', '')
+        .regex_replace('<Settings>', '<Settings>\n        <Domain name="telephony" enabled="true" />'),
     'vendor/lib64/libFNVfbEngineHAL.so': blob_fixup()
         .clear_symbol_version('AHardwareBuffer_allocate')
         .clear_symbol_version('AHardwareBuffer_describe')

@@ -76,6 +76,23 @@ function blob_fixup() {
     [ "$2" = "" ] && return 0
         sed -i '/^END$/i read_mac_addr_from_mac_file=1' "${2}"
         ;;
+    vendor/lib64/libFNVfbEngineHAL.so)
+    [ "$2" = "" ] && return 0
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_allocate" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_describe" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_lock" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_release" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_unlock" "${2}"
+        ;;
+    vendor/lib64/libZEffectLib.so)
+    [ "$2" = "" ] && return 0
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_allocate" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_describe" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_lock" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_lockPlanes" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_release" "${2}"
+        "${PATCHELF_0_17_2}" --clear-symbol-version "AHardwareBuffer_unlock" "${2}"
+        ;;
     # Change soname for fingerprint.gf95xx.default.so.
     vendor/lib64/hw/fingerprint.lahaina.so)
     [ "$2" = "" ] && return 0

@@ -18,11 +18,19 @@
 
 #include <hardware/hw_auth_token.h>
 
+#include <android-base/file.h>
 #include <hardware/hardware.h>
 #include "BiometricsFingerprint.h"
 
 #include <inttypes.h>
 #include <unistd.h>
+
+#define CMD_FINGER_DOWN 1
+#define CMD_FINGER_UP 0
+
+#define LCD_HBM_PATH "/proc/driver/lcd_hbm"
+#define LCD_HBM_ON "1"
+#define LCD_HBM_OFF "0"
 
 namespace android {
 namespace hardware {
@@ -67,10 +75,14 @@ Return<bool> BiometricsFingerprint::isUdfps(uint32_t) {
 }
 
 Return<void> BiometricsFingerprint::onFingerDown(uint32_t, uint32_t, float, float) {
+    mDevice->sendCustomizedCommand(mDevice, 10, CMD_FINGER_DOWN);
+    android::base::WriteStringToFile(LCD_HBM_ON, LCD_HBM_PATH);
     return Void();
 }
 
 Return<void> BiometricsFingerprint::onFingerUp() {
+    android::base::WriteStringToFile(LCD_HBM_OFF, LCD_HBM_PATH);
+    mDevice->sendCustomizedCommand(mDevice, 10, CMD_FINGER_UP);
     return Void();
 }
 

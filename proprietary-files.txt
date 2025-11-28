@@ -709,6 +709,12 @@ vendor/lib64/vendor.display.color@1.5.so|5a1e7d0de33509909cf0f514b754e95f2233c86
 vendor/lib64/vendor.display.postproc@1.0.so|e63c770fc317a9d98ddd2de2c7d6250258398f2e
 
 # Display
+vendor/etc/qdcm_calib_data_Visionox-NT37701-1080-2400-6P67Inch.xml
+vendor/etc/qdcm_calib_data_Visionox-NT37701-GAMUT-1080-2400-6P67Inch.xml
+vendor/etc/qdcm_calib_data_Visionox-RM692C9-1080-2460-6P9Inch.xml
+vendor/etc/qdcm_calib_data_Visionox-RM692E1-1080-2400-6P67Inch.xml
+vendor/etc/qdcm_calib_data_Visionox-RM692E1-HBM51-1080-2400-6P67Inch.xml
+vendor/etc/qdcm_calib_data_Visionox-RM692E1-HBMOTP-1080-2400-6P67Inch.xml
 vendor/etc/snapdragon_color_libs_config.xml
 
 # FASTCV

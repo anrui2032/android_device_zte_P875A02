@@ -30,6 +30,8 @@ import /vendor/etc/init/hw/init.qcom.usb.rc
 import /vendor/etc/init/hw/init.qcom.test.rc
 import /vendor/etc/init/hw/init.target.rc
 import /vendor/etc/init/hw/init.qcom.factory.rc
+import /vendor/etc/init/hw/init.vendor.rc
+import /vendor/etc/init/hw/init.vendor.usb.rc
 
 on early-init
     mount debugfs debugfs /sys/kernel/debug
@@ -92,6 +94,8 @@ on early-boot
 
     chown system system /mnt/vendor/persist/data/pfm/licenses
     chmod 0775 /mnt/vendor/persist/data/pfm/licenses
+    chown system system /mnt/vendor/persist/data/pfm/licenses/ZTE_Widevine_2020_10_12.pfm
+    chmod 0644 /mnt/vendor/persist/data/pfm/licenses/ZTE_Widevine_2020_10_12.pfm
     chown system system /mnt/vendor/persist/data/pfm/licenses/store_0
     chmod 0664 /mnt/vendor/persist/data/pfm/licenses/store_0
     chown system system /mnt/vendor/persist/data/pfm/licenses/store_1
@@ -452,7 +456,7 @@ on property:persist.sys.pil_proxy_timeout=*
 on property:persist.vendor.ssr.restart_level=*
     start vendor.ssr_setup
 
-on property:persist.vendor.ssr.enable_ramdumps=1
+on property:persist.vendor.ssr.enable_ramdumps=1 && property:odm.wetest_on=1
     write /sys/module/subsystem_restart/parameters/enable_ramdumps 1
     mkdir /data/vendor/ramdump_ssr 770 system system
     start vendor.ss_ramdump
@@ -887,6 +891,13 @@ on property:vendor.chre.enabled=0
    stop chre
 
 service bugreport /system/bin/dumpstate -d -p -B -z -o /data/user_de/0/com.android.shell/files/bugreports/bugreport
+    class main
+    disabled
+    oneshot
+    #keycodes 114 115 116
+
+# Add for three-key trigger(no broadcast)
+service bugreportnb /system/bin/dumpstate -d -p -z -o /data/user_de/0/com.android.shell/files/bugreports/bugreport
     class main
     disabled
     oneshot

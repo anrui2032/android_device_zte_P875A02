@@ -370,8 +370,11 @@ case "$target" in
                 setprop vendor.display.enhance_idle_time 1
                 setprop vendor.netflix.bsp_rev ""
                 ;;
-             518|561)
-                setprop vendor.media.target.version 3
+             518)
+                ;;
+            *)
+                # default case is for bengal
+                setprop vendor.netflix.bsp_rev "Q6115-31409-1"
                 ;;
         esac
         ;;

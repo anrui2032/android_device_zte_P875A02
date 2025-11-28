@@ -34,10 +34,15 @@ baseband=`getprop ro.baseband`
 sgltecsfb=`getprop persist.vendor.radio.sglte_csfb`
 datamode=`getprop persist.vendor.data.mode`
 low_ram=`getprop ro.config.low_ram`
+target_no_telephony=`getprop ro.vendor.feature.target_no_telephony`
 qcrild_status=true
 
+if [ "$target_no_telephony" = "true" ]; then
+    baseband="no_telephony"
+fi
+
 case "$baseband" in
-    "apq" | "sda" | "qcs" )
+    "no_telephony" | "apq" | "sda" | "qcs" )
     setprop ro.vendor.radio.noril yes
     stop vendor.ril-daemon
     stop vendor.qcrild

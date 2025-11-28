@@ -168,6 +168,7 @@ persist.vendor.sensors.sync_request=true
 ro.soc.manufacturer=QTI
 
 # USB
+ro.vendor.product.ztename=ZTE Axon 30 Pro 5G
 sys.usb.mtp.batchcancel=1
 vendor.usb.diag.func.name=ffs
 vendor.usb.use_ffs_mtp=1

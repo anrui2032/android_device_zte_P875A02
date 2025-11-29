@@ -1507,6 +1507,11 @@ vendor/lib64/libtime_genoff.so
 
 # Touchscreen
 vendor/etc/init/touchscreen_zte.rc
+vendor/firmware/GT9897_test_sensor_0.tporder
+vendor/firmware/goodix_cfg_group.bin
+vendor/firmware/goodix_cfg_group_gt9897.bin
+vendor/firmware/goodix_firmware.bin
+vendor/firmware/goodix_firmware_gt9897.bin
 
 # VM
 vendor/bin/vmmgr

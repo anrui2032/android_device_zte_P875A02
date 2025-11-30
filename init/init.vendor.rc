@@ -489,3 +489,25 @@ on property:ro.vendor.feature.zte_feature_for_cetc=true
     mkdir /mnt/vendor/persist/dky_record 0777 system system
     start dkyservice
 # zte modify to add record events for dky CETC end
+
+service vendor.camera-provider-2-4 /vendor/bin/hw/android.hardware.camera.provider@2.4-service_64
+    override
+    interface android.hardware.camera.provider@2.4::ICameraProvider legacy/0
+    interface vendor.qti.hardware.camera.postproc@1.0::IPostProcService camerapostprocservice
+    class hal
+    user cameraserver
+    group audio camera input drmrpc oem_2907
+    ioprio rt 4
+    capabilities SYS_NICE
+    writepid /dev/cpuset/camera-daemon/tasks /dev/stune/foreground/tasks
+
+on property:sys.boot_completed=1
+    chown system cameraserver /mnt/vendor/persist/camera/dualcam_cali_arcsoft_30.bin
+    chmod 0644 /mnt/vendor/persist/camera/dualcam_cali_arcsoft_30.bin
+    chown system cameraserver /mnt/vendor/persist/camera/dualcam_cali_arcsoft_02.bin
+    chmod 0644 /mnt/vendor/persist/camera/dualcam_cali_arcsoft_02.bin
+    mkdir /mnt/vendor/persist/camera_ois 0775 system cameraserver
+    chown system cameraserver /mnt/vendor/persist/camera_ois/oisbu63169
+    chmod 0644 /mnt/vendor/persist/camera_ois/oisbu63169
+    chown system cameraserver /mnt/vendor/persist/camera_ois/ois_lc898128
+    chmod 0644 /mnt/vendor/persist/camera_ois/ois_lc898128

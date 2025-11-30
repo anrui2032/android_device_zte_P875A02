@@ -58,6 +58,7 @@ function blob_fixup() {
     # Change soname for fingerprint.gf95xx.default.so.
     vendor/lib64/hw/fingerprint.lahaina.so)
         sed -i 's/\x00libfingerprint.default.so\x00/\x00fingerprint.lahaina.so\x00\x00\x00\x00/' "${2}"
+        sed -i 's/\x00fingerprint.gf95xx\x00/\x00fingerprint\x00\x00\x00\x00\x00\x00\x00\x00/' "${2}"
         ;;
     esac
 }

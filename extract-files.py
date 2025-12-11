@@ -70,6 +70,12 @@ blob_fixups: blob_fixups_user_type = {
         .binary_regex_replace(b'fingerprint.gf95xx\x00', b'fingerprint\x00\x00\x00\x00\x00\x00\x00\x00'),
     ('vendor/lib64/mediadrm/libwvdrmengine.so', 'vendor/lib64/libwvhidl.so'): blob_fixup()
         .add_needed('libcrypto_shim.so'),
+    (
+        'vendor/bin/poweropt-service',
+        'vendor/lib64/libdpps.so',
+        'vendor/lib64/libsnapdragoncolor-manager.so',
+    ): blob_fixup()
+        .replace_needed('libtinyxml2.so', 'libtinyxml2-v34.so'),
 }  # fmt: skip
 
 module = ExtractUtilsModule(

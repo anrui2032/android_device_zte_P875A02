@@ -874,6 +874,13 @@ vendor/lib64/vendor.qti.gnss@4.0-service.so
 vendor/lib64/vendor.qti.gnss@4.0.so
 vendor/lib64/vendor.qti.hardware.qccsyshal@1.0.so
 
+# IFAA
+system/priv-app/AlipayService/AlipayService.apk
+vendor/bin/hw/vendor.zte.fingerprint.ifaahidl@1.0-service
+vendor/etc/init/vendor.zte.fingerprint.ifaahidl@1.0-service.rc
+vendor/lib64/libteec.so
+vendor/lib64/vendor.zte.fingerprint.ifaahidl@1.0.so
+
 # IMS
 system/etc/sysconfig/qti_whitelist.xml
 system_ext/etc/permissions/telephony_system-ext_privapp-permissions-qti.xml

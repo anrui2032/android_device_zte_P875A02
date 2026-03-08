@@ -113,6 +113,12 @@ vendor.display.disable_offline_rotator=1
 vendor.display.enable_async_powermode=0
 vendor.display.enable_optimize_refresh=1
 
+# Fingerprint
+ro.vendor.feature.fingerprint_sensorui_position_center_r=94
+ro.vendor.feature.fingerprint_sensorui_position_center_x=540
+ro.vendor.feature.fingerprint_sensorui_position_center_y=2068
+ro.vendor.feature.zte_underscreen_fingerprint_enable=true
+
 # FRP
 ro.frp.pst=/dev/block/bootdevice/by-name/frp
 

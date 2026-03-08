@@ -49,28 +49,12 @@ public class ZTEIFAAManager extends IFAAManagerV3 {
     public int startBIOManager(Context context, int authType) {
         Log.i(TAG, "authType:" + authType);
         if (authType == 1) {
-            boolean success = true;
             try {
-                Intent i = new Intent();
-                i.addFlags(268435456);
-                i.setComponent(new ComponentName("com.android.settings", "com.android.settings.Settings$FingerPrintSettingsActivity"));
-                i.putExtra(":settings:show_fragment", "com.android.settings.FingerPrintSettingsActivity");
-                context.startActivity(i);
-            } catch (Exception e) {
-                Log.e(TAG, "startBIOManager with component, exception:" + e.fillInStackTrace());
-                success = false;
-            }
-            if (success) {
-                return 0;
-            }
-            try {
-                Intent intent = new Intent();
-                intent.addFlags(268435456);
-                intent.setAction("android.settings.FINGERPRINT_SETTINGS");
-                intent.putExtra(":settings:show_fragment", "com.android.settings.FingerPrintSettingsActivity");
+                Intent intent = new Intent("android.settings.FINGERPRINT_SETTINGS");
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
-            } catch (Exception e2) {
-                Log.e(TAG, "startBIOManager with action, exception:" + e2.fillInStackTrace());
+            } catch (Exception e) {
+                Log.e(TAG, "startBIOManager with action, exception:" + e.fillInStackTrace());
                 return -1;
             }
         }

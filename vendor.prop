@@ -7,12 +7,12 @@ ro.opengles.version=196610
 aaudio.hw_burst_min_usec=2000
 aaudio.mmap_exclusive_policy=2
 aaudio.mmap_policy=2
-persist.vendor.audio.fluence.speaker=true
+persist.vendor.audio.fluence.speaker=false
 persist.vendor.audio.fluence.voicecall=true
 persist.vendor.audio.fluence.voicecomm=true
 persist.vendor.audio.ha_proxy.enabled=true
 persist.vendor.audio.spv4.enable=true
-persist.vendor.audio.vbat.enabled=true
+persist.vendor.audio.vbat.enabled=false
 persist.vendor.audio.voicecall.speaker.stereo=true
 vendor.audio.adm.buffering.ms=2
 vendor.audio.feature.a2dp_offload.enable=true
@@ -36,7 +36,7 @@ vendor.audio.feature.multi_voice_session.enable=true
 vendor.audio.feature.power_mode.enable=true
 vendor.audio.feature.ras.enable=true
 vendor.audio.feature.snd_mon.enable=true
-vendor.audio.feature.spkr_prot.enable=true
+vendor.audio.feature.spkr_prot.enable=false
 vendor.audio.feature.src_trkn.enable=true
 vendor.audio.feature.ssrec.enable=true
 vendor.audio.feature.usb_offload.enable=true
@@ -85,11 +85,17 @@ persist.bluetooth.a2dp_offload.disabled=false
 persist.sys.fflag.override.settings_bluetooth_hearing_aid=true
 persist.vendor.bt.aac_frm_ctl.enabled=true
 persist.vendor.bt.aac_vbr_frm_ctl.enabled=true
+persist.vendor.qcom.bluetooth.a2dp_mcast_test.enabled=false
 persist.vendor.qcom.bluetooth.a2dp_offload_cap=sbc-aptx-aptxtws-aptxhd-aac-ldac-aptxadaptiver2
 persist.vendor.qcom.bluetooth.aac_frm_ctl.enabled=true
 persist.vendor.qcom.bluetooth.aac_vbr_ctl.enabled=false
 persist.vendor.qcom.bluetooth.aptxadaptiver2_1_support=true
+persist.vendor.qcom.bluetooth.scram.enabled=false
+persist.vendor.qcom.bluetooth.twsp_state.enabled=false
 ro.bluetooth.a2dp_offload.supported=true
+
+# Camera
+camera.disable_zsl_mode=true
 
 # DPM
 persist.vendor.dpm.idletimer.mode=default
@@ -97,9 +103,6 @@ persist.vendor.dpmhalservice.enable=1
 
 # DRM
 drm.service.enabled=true
-
-# Data
-persist.vendor.data.iwlan.enable=true
 
 # Display
 vendor.display.comp_mask=0
@@ -119,10 +122,10 @@ vendor.gatekeeper.disable_spu=true
 # Graphics
 debug.sf.disable_client_composition_cache=1
 debug.sf.enable_gl_backpressure=1
-debug.sf.high_fps_early_gl_phase_offset_ns=-2000000
+debug.sf.high_fps_early_gl_phase_offset_ns=-4000000
 debug.sf.high_fps_early_phase_offset_ns=-4000000
 debug.sf.high_fps_late_app_phase_offset_ns=1000000
-debug.sf.high_fps_late_sf_phase_offset_ns=-2000000
+debug.sf.high_fps_late_sf_phase_offset_ns=-4000000
 debug.sf.latch_unsignaled=1
 ro.surface_flinger.force_hwc_copy_for_virtual_displays=true
 ro.surface_flinger.has_HDR_display=true
@@ -152,20 +155,46 @@ debug.stagefright.omx_default_rank=0
 
 # Performance
 ro.vendor.extension_library=libqti-perfd-client.so
+ro.vendor.perf.scroll_opt=1
+
+# Qualcomm System Daemon
+persist.vendor.qcomsysd.enabled=1
+
+# QSPM
+ro.vendor.qspm.enable=true
+
+# QTEE
+persist.vendor.qteeconnector.retrying_interval=30
+persist.vendor.qteeconnector.retrying_timeout=2000
 
 # Radio
 persist.radio.multisim.config=dsds
+persist.radio.sap_silent_pin=true
+persist.vendor.radio.5g_icon_rule=D
+persist.vendor.radio.5g_mode_pref=0
+persist.vendor.radio.add_power_save=1
+persist.vendor.radio.apm_sim_not_pwdn=1
+persist.vendor.radio.ct_cf_ut_first=true
+persist.vendor.radio.custom_ecc=1
+persist.vendor.radio.enableadvancedscan=true
+persist.vendor.radio.nsa_cell_size=10
 persist.vendor.radio.procedure_bytes=SKIP
 persist.vendor.radio.rat_on=combine
+persist.vendor.radio.sib16_support=1
+persist.vendor.radio.signalDelay=5
 ro.telephony.default_network=33,33
 
 # Sensors
-persist.vendor.sensors.allow_non_default_discovery=true
+persist.vendor.sensors.allow_non_default_discovery=false
+persist.vendor.sensors.firmware_property_read_support=false
 persist.vendor.sensors.on_change_sample_period=true
 persist.vendor.sensors.sync_request=true
 
 # SoC
 ro.soc.manufacturer=QTI
+
+# SSR
+persist.vendor.ssr.restart_level=ALL_ENABLE
 
 # USB
 ro.vendor.product.ztename=ZTE Axon 30 Pro 5G

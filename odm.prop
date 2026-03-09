@@ -1,13 +1,9 @@
 # Audio
-persist.vendor.audio_hal.dsp_bit_width_enforce_mode=24
 persist.vendor.audio.bcl.enabled=false
-persist.vendor.audio.fluence.voicerec=true
-persist.vendor.audio.speaker.prot.enable=false
-persist.vendor.audio.vbat.enabled=false
-persist.vendor.audio.voicecall.speaker.stereo=false
-ro.config.media_vol_steps=30
+persist.vendor.audio.fluence.voicerec=false
+persist.vendor.audio.speaker.prot.enable=true
 ro.vendor.audio.sdk.fluencetype=fluence
-vendor.audio.spkr_prot.tx.sampling_rate=0
+vendor.audio.spkr_prot.tx.sampling_rate=48000
 
 # Display
 debug.sf.high_fps_early_gl_phase_offset_ns=-2000000
@@ -15,6 +11,3 @@ debug.sf.high_fps_late_sf_phase_offset_ns=-2000000
 
 # QC Value Addons
 ro.vendor.qti.va_odm.support=1
-
-# Radio
-persist.vendor.radio.add_power_save=1

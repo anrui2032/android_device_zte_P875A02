@@ -200,6 +200,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.health-service.qti
 
+PRODUCT_PACKAGES += \
+    android.hardware.health@2.1.vendor
+
 # IFAA Manager
 PRODUCT_PACKAGES += \
     org.ifaa.android.manager

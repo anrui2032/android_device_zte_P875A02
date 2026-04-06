@@ -78,6 +78,7 @@ PRODUCT_PACKAGES += \
     libvolumelistener
 
 PRODUCT_PACKAGES += \
+    libaudioroute.vendor \
     libprocessgroup.vendor
 
 # Authsecret

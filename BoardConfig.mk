@@ -189,8 +189,7 @@ BOARD_VENDOR_KERNEL_MODULES_LOAD := \
     wsa_macro_dlkm.ko \
     xc4000.ko \
     xc5000.ko \
-    zte_goodix_core.ko \
-    zte_misc.ko
+    zte_goodix_core.ko
 
 TARGET_MODULE_ALIASES += wlan.ko:qca_cld3_wlan.ko
 

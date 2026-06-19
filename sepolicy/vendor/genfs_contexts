@@ -1,34 +1,3 @@
-# Camera
-genfscon proc /driver/dualcam_cali    u:object_r:vendor_proc_camera:s0
-genfscon proc /driver/ois_af_state    u:object_r:vendor_proc_camera:s0
-genfscon proc /driver/ois_i2c_rw      u:object_r:vendor_proc_camera:s0
-
-# Display
-genfscon sysfs /devices/platform/soc/990000.i2c/i2c-1/1-0038/fts_glove_mode          u:object_r:vendor_sysfs_graphics:s0
-genfscon sysfs /devices/platform/soc/990000.i2c/i2c-1/1-0038/fts_high_report_rate    u:object_r:vendor_sysfs_graphics:s0
-genfscon sysfs /devices/platform/soc/990000.i2c/i2c-1/1-0038/fts_gestures            u:object_r:vendor_sysfs_graphics:s0
-
-# EVT
-genfscon proc /asusevtlog    u:object_r:vendor_proc_evt:s0
-
-# Fingerprint
-genfscon proc /driver/fp_xy    u:object_r:vendor_proc_fingerprint:s0
-
-# Performance
-genfscon sysfs /devices/platform/soc/1d84000.ufshc/clkgate_enable    u:object_r:vendor_sysfs_msm_perf:s0
-
-# Sensors
-genfscon sysfs /class/icm206xx                                                           u:object_r:vendor_sysfs_sensors:s0
-genfscon sysfs /devices/virtual/sensors                                                  u:object_r:vendor_sysfs_sensors:s0
-genfscon sysfs /devices/platform/soc/990000.i2c/i2c-1/1-0038/fts_fod_pressed             u:object_r:vendor_sysfs_sensors:s0
-genfscon sysfs /devices/platform/soc/990000.i2c/i2c-1/1-0038/fts_double_click_pressed    u:object_r:vendor_sysfs_sensors:s0
-
-# Thermal
-genfscon sysfs /class/asuslib/set_virtualthermal    u:object_r:sysfs_thermal:s0
-
-# Vibrator
-genfscon sysfs /devices/platform/soc/998000.i2c/i2c-2/2-005a    u:object_r:sysfs_vibrator:s0
-
 # Wakeup
 genfscon sysfs /devices/platform/dummy_hcd.0/usb1/wakeup                                                                            u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc/17300000.qcom,lpass/subsys6/wakeup                                                             u:object_r:sysfs_wakeup:s0

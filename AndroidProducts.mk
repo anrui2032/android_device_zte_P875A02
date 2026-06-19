@@ -5,9 +5,9 @@
 #
 
 PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/lineage_sake.mk
+    $(LOCAL_DIR)/lineage_P875A02.mk
 
 COMMON_LUNCH_CHOICES := \
-    lineage_sake-eng \
-    lineage_sake-user \
-    lineage_sake-userdebug
+    lineage_P875A02-eng \
+    lineage_P875A02-user \
+    lineage_P875A02-userdebug

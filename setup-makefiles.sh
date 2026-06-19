@@ -8,8 +8,8 @@
 
 set -e
 
-DEVICE=sake
-VENDOR=asus
+DEVICE=P875A02
+VENDOR=zte
 
 # Load extract_utils and do some sanity checks
 MY_DIR="${BASH_SOURCE%/*}"

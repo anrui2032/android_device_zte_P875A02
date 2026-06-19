@@ -8,8 +8,8 @@
 
 set -e
 
-DEVICE=sake
-VENDOR=asus
+DEVICE=P875A02
+VENDOR=zte
 
 # Load extract utilities and do some sanity checks.
 MY_DIR="${BASH_SOURCE%/*}"
@@ -55,15 +55,9 @@ fi
 
 function blob_fixup() {
     case "${1}" in
-
-    # Remove dependency on android.hidl.base@1.0 for WFD native library.
-    system_ext/lib/libwfdnative.so | system_ext/lib64/libwfdnative.so )
-        "${PATCHELF}" --remove-needed "android.hidl.base@1.0.so" "${2}"
-    ;;
-
-    # Change soname for fingerprint.default.so.
+    # Change soname for fingerprint.gf95xx.default.so.
     vendor/lib64/hw/fingerprint.lahaina.so)
-        patchelf --set-soname "fingerprint.lahaina.so" "${2}"
+        sed -i 's/\x00libfingerprint.default.so\x00/\x00fingerprint.lahaina.so\x00\x00\x00\x00/' "${2}"
         ;;
     esac
 }

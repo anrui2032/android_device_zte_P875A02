@@ -1,2 +1,2 @@
-# Battery
-allow fsck battery_block_device:blk_file rw_file_perms;
+# Logdump
+allow fsck logdump_block_device:blk_file rw_file_perms;

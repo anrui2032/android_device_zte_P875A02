@@ -12,4 +12,62 @@
             <instance>default</instance>
         </interface>
     </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.hardware.zte.wifi</name>
+        <version>1.0</version>
+        <interface>
+            <name>IWifi</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.zte.fingerprint.ifaahidl</name>
+        <version>1.0</version>
+        <interface>
+            <name>IIfaaDaemon</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.zte.fingerprint.ztecmd</name>
+        <version>1.0</version>
+        <interface>
+            <name>IBiometricsFingerprint</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.zte.hardware.laser</name>
+        <version>1.0</version>
+        <interface>
+            <name>ILaser</name>
+            <instance>default</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.zte.hardware.radio</name>
+        <version>1.0</version>
+        <interface>
+            <name>IVendorRadio</name>
+            <instance>slot1</instance>
+            <instance>slot2</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.zte.modem</name>
+        <version>1.0</version>
+        <interface>
+            <name>IModem</name>
+            <instance>instance0</instance>
+            <instance>instance1</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.zte.subsys</name>
+        <version>1.0</version>
+        <interface>
+            <name>ISubsys</name>
+            <instance>subsys</instance>
+        </interface>
+    </hal>
 </compatibility-matrix>

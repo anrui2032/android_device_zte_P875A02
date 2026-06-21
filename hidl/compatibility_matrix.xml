@@ -2,7 +2,7 @@
      Copyright (C) 2021 The Linux Foundation
      SPDX-License-Identifier: BSD-3-Clause
 -->
-<compatibility-matrix version="1.0" type="device">
+<compatibility-matrix version="2.0" type="device">
     <hal format="hidl" optional="false">
         <name>android.frameworks.schedulerservice</name>
         <version>1.0</version>
@@ -61,11 +61,26 @@
     </hal>
     <hal format="hidl" optional="true">
         <name>vendor.qti.hardware.qccsyshal</name>
-        <transport>hwbinder</transport>
         <version>1.0</version>
         <interface>
             <name>IQccsyshal</name>
             <instance>qccsyshal</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.qti.hardware.sigma_miracast</name>
+        <version>1.0</version>
+        <interface>
+            <name>Isigma_miracast</name>
+            <instance>sigmahal</instance>
+        </interface>
+    </hal>
+    <hal format="hidl" optional="true">
+        <name>vendor.qti.hardware.wifi.keystore</name>
+        <version>1.0</version>
+        <interface>
+            <name>IKeystoreExt</name>
+            <instance>default</instance>
         </interface>
     </hal>
 </compatibility-matrix>

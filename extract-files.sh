@@ -55,6 +55,9 @@ fi
 
 function blob_fixup() {
     case "${1}" in
+    vendor/etc/wifi/wlan/WCNSS_qcom_cfg.ini)
+        sed -i '/^END$/i read_mac_addr_from_mac_file=1' "${2}"
+        ;;
     # Change soname for fingerprint.gf95xx.default.so.
     vendor/lib64/hw/fingerprint.lahaina.so)
         sed -i 's/\x00libfingerprint.default.so\x00/\x00fingerprint.lahaina.so\x00\x00\x00\x00/' "${2}"

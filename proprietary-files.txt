@@ -1020,6 +1020,17 @@ vendor/lib64/unnhal-acc-common.so
 vendor/lib64/unnhal-acc-gpu.so
 vendor/lib64/unnhal-acc-htp.so
 
+# NFC
+vendor/bin/hw/android.hardware.nfc@1.2-service
+vendor/etc/init/android.hardware.nfc@1.2-service.rc
+vendor/etc/init/init.nfc.st54j.rc
+vendor/etc/libnfc-hal-st.conf
+vendor/etc/libnfc-nci.conf
+vendor/etc/st54j_conf.txt
+vendor/firmware/st54j_fw.bin
+vendor/lib64/libstnfc-auth.so
+vendor/lib64/nfc_nci.st21nfc.st.so
+
 # PD
 vendor/bin/pd-mapper
 vendor/lib64/libpdmapper.so

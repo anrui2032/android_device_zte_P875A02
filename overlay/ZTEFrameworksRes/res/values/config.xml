@@ -27,15 +27,15 @@
 
     <!-- Note: This setting is deprecated, please use
     config_screenBrightnessSettingDefaultFloat instead -->
-    <integer name="config_screenBrightnessSettingDefault">58</integer>
+    <integer name="config_screenBrightnessSettingDefault">102</integer>
 
     <!-- Stability requirements in milliseconds for accepting a new brightness level.  This is used
          for debouncing the light sensor.  Different constants are used to debounce the light sensor
          when adapting to brighter or darker environments.  This parameter controls how quickly
          brightness changes occur in response to an observed change in light level that exceeds the
          hysteresis threshold. -->
-    <integer name="config_autoBrightnessBrighteningLightDebounce">2000</integer>
-    <integer name="config_autoBrightnessDarkeningLightDebounce">4000</integer>
+    <integer name="config_autoBrightnessBrighteningLightDebounce">1500</integer>
+    <integer name="config_autoBrightnessDarkeningLightDebounce">6000</integer>
 
     <!-- Array of light sensor lux values to define our levels for auto backlight brightness support.
          The N entries of this array define N + 1 control points as follows:
@@ -58,30 +58,14 @@
 
          Must be overridden in platform specific overlays -->
     <integer-array name="config_autoBrightnessLevels">
-        <item>1</item>
-        <item>15</item>
-        <item>30</item>
+        <item>10</item>
         <item>50</item>
         <item>100</item>
-        <item>200</item>
-        <item>300</item>
-        <item>400</item>
-        <item>500</item>
-        <item>650</item>
-        <item>800</item>
-        <item>1000</item>
+        <item>220</item>
+        <item>420</item>
         <item>1500</item>
-        <item>2000</item>
         <item>3000</item>
-        <item>4000</item>
         <item>5000</item>
-        <item>7000</item>
-        <item>10000</item>
-        <item>12500</item>
-        <item>15000</item>
-        <item>17500</item>
-        <item>20000</item>
-        <item>50000</item>
     </integer-array>
 
     <!-- Array of desired screen brightness in nits corresponding to the lux values
@@ -97,61 +81,75 @@
          This array should have size one greater than the size of the config_autoBrightnessLevels
          array. The brightness values must be non-negative and non-decreasing. This must be
          overridden in platform specific overlays -->
-    <integer-array name="config_autoBrightnessDisplayValuesNits">
-        <item>8</item>
-        <item>11</item>
-        <item>35</item>
-        <item>52</item>
-        <item>67</item>
-        <item>81</item>
-        <item>103</item>
-        <item>119</item>
-        <item>130</item>
-        <item>138</item>
-        <item>151</item>
-        <item>164</item>
-        <item>176</item>
-        <item>229</item>
-        <item>264</item>
-        <item>291</item>
-        <item>303</item>
-        <item>310</item>
-        <item>314</item>
-        <item>319</item>
-        <item>399</item>
-        <item>405</item>
-        <item>405</item>
-        <item>405</item>
-        <item>405</item>
-    </integer-array>
+    <array name="config_autoBrightnessDisplayValuesNits">
+        <item>6.5</item>
+        <item>26.6</item>
+        <item>69.1</item>
+        <item>74.5</item>
+        <item>95.6</item>
+        <item>111.6</item>
+        <item>211.9</item>
+        <item>315</item>
+        <item>520.5</item>
+    </array>
 
     <!-- An array describing the screen's backlight values corresponding to the brightness
          values in the config_screenBrightnessNits array.
 
          This array should be equal in size to config_screenBrightnessBacklight. -->
     <integer-array name="config_screenBrightnessBacklight">
+        <item>0</item>
         <item>1</item>
         <item>5</item>
-        <item>7</item>
-        <item>22</item>
-        <item>33</item>
-        <item>42</item>
-        <item>51</item>
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>35</item>
+        <item>40</item>
+        <item>45</item>
+        <item>50</item>
+        <item>55</item>
+        <item>60</item>
         <item>65</item>
+        <item>70</item>
         <item>75</item>
-        <item>82</item>
-        <item>87</item>
+        <item>80</item>
+        <item>85</item>
+        <item>90</item>
         <item>95</item>
-        <item>103</item>
-        <item>111</item>
-        <item>144</item>
-        <item>166</item>
-        <item>183</item>
-        <item>191</item>
+        <item>100</item>
+        <item>105</item>
+        <item>110</item>
+        <item>115</item>
+        <item>120</item>
+        <item>125</item>
+        <item>130</item>
+        <item>135</item>
+        <item>140</item>
+        <item>145</item>
+        <item>150</item>
+        <item>155</item>
+        <item>160</item>
+        <item>165</item>
+        <item>170</item>
+        <item>175</item>
+        <item>180</item>
+        <item>185</item>
+        <item>190</item>
         <item>195</item>
-        <item>198</item>
-        <item>201</item>
-        <item>251</item>
+        <item>200</item>
+        <item>205</item>
+        <item>210</item>
+        <item>215</item>
+        <item>220</item>
+        <item>225</item>
+        <item>230</item>
+        <item>235</item>
+        <item>240</item>
+        <item>245</item>
+        <item>250</item>
         <item>255</item>
     </integer-array>
 
@@ -162,31 +160,61 @@
          brightness modes but only the maximum brightness value obtainable in a sustainable manner.
 
          This array should be equal in size to config_screenBrightnessBacklight -->
-    <integer-array name="config_screenBrightnessNits">
-        <item>2</item>
-        <item>8</item>
-        <item>11</item>
+    <array name="config_screenBrightnessNits">
+        <item>0</item>
+        <item>1.9</item>
+        <item>3.8</item>
+        <item>6.5</item>
+        <item>9.4</item>
+        <item>12.9</item>
+        <item>17.1</item>
+        <item>20.7</item>
+        <item>23.7</item>
+        <item>26.6</item>
+        <item>31.4</item>
         <item>35</item>
-        <item>52</item>
-        <item>67</item>
-        <item>81</item>
-        <item>103</item>
+        <item>39.5</item>
+        <item>42.5</item>
+        <item>47.6</item>
+        <item>51</item>
+        <item>55.5</item>
+        <item>61.2</item>
+        <item>65.7</item>
+        <item>69.1</item>
+        <item>74.5</item>
+        <item>79.1</item>
+        <item>84.4</item>
+        <item>91.1</item>
+        <item>95.9</item>
+        <item>101.3</item>
+        <item>106.2</item>
+        <item>111.6</item>
+        <item>115.1</item>
         <item>119</item>
-        <item>130</item>
-        <item>138</item>
-        <item>151</item>
-        <item>164</item>
-        <item>176</item>
-        <item>229</item>
-        <item>264</item>
-        <item>291</item>
-        <item>303</item>
-        <item>310</item>
-        <item>314</item>
-        <item>319</item>
-        <item>399</item>
-        <item>405</item>
-    </integer-array>
+        <item>124</item>
+        <item>129.2</item>
+        <item>133</item>
+        <item>138.5</item>
+        <item>143.7</item>
+        <item>147.8</item>
+        <item>153.2</item>
+        <item>159.3</item>
+        <item>165.3</item>
+        <item>169.9</item>
+        <item>177</item>
+        <item>189.9</item>
+        <item>203.1</item>
+        <item>218.6</item>
+        <item>235.4</item>
+        <item>254.6</item>
+        <item>273.9</item>
+        <item>291.9</item>
+        <item>308.3</item>
+        <item>328.9</item>
+        <item>350.9</item>
+        <item>374.1</item>
+        <item>408.7</item>
+    </array>
 
     <!-- Array of ambient lux threshold values. This is used for determining hysteresis constraint
          values by calculating the index to use for lookup and then setting the constraint value
@@ -200,9 +228,14 @@
          level[n] <= value < level[n+1]  n+1
          level[MAX] <= value             MAX+1 -->
     <integer-array name="config_ambientThresholdLevels">
-        <item>30</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>6</item>
+        <item>10</item>
+        <item>50</item>
+        <item>100</item>
         <item>300</item>
-        <item>5000</item>
     </integer-array>
 
     <!-- Array of hysteresis constraint values for brightening, represented as tenths of a
@@ -212,10 +245,15 @@
          the screen brightness is recalculated. See the config_ambientThresholdLevels
          description for how the constraint value is chosen. -->
     <integer-array name="config_ambientBrighteningThresholds">
-        <item>800</item>
+        <item>9000</item>
+        <item>4000</item>
         <item>3000</item>
         <item>2000</item>
-        <item>500</item>
+        <item>1000</item>
+        <item>800</item>
+        <item>600</item>
+        <item>300</item>
+        <item>100</item>
     </integer-array>
 
     <!-- Array of hysteresis constraint values for darkening, represented as tenths of a
@@ -225,41 +263,16 @@
          the screen brightness is recalculated. See the config_ambientThresholdLevels
          description for how the constraint value is chosen. -->
     <integer-array name="config_ambientDarkeningThresholds">
-        <item>950</item>
-        <item>950</item>
+        <item>999</item>
+        <item>999</item>
+        <item>999</item>
+        <item>999</item>
+        <item>999</item>
         <item>800</item>
-        <item>800</item>
+        <item>600</item>
+        <item>400</item>
+        <item>200</item>
     </integer-array>
-
-    <!-- The default intensity level for haptic feedback. See Settings.System.HAPTIC_FEEDBACK_INTENSITY
-         for more details on the constant values and meanings. -->
-    <integer name="config_defaultHapticFeedbackIntensity">3</integer>
-
-    <!-- Vibrator pattern for feedback about a long screen/key press. -->
-    <integer-array name="config_longPressVibePattern">
-        <item>0</item>
-        <item>12</item>
-        <item>7</item>
-    </integer-array>
-
-    <!-- Vibrator pattern for feedback about touching a virtual key. -->
-    <integer-array name="config_virtualKeyVibePattern">
-        <item>0</item>
-        <item>12</item>
-        <item>7</item>
-    </integer-array>
-
-    <!-- Vibrator pattern for a very short but reliable vibration for soft keyboard tap. -->
-    <integer-array name="config_keyboardTapVibePattern">
-        <item>10</item>
-    </integer-array>
-
-    <!-- Indicate whether to allow the device to suspend when the screen is off
-         due to the proximity sensor.  This resource should only be set to true
-         if the sensor HAL correctly handles the proximity sensor as a wake-up source.
-         Otherwise, the device may fail to wake out of suspend reliably.
-         The default is false. -->
-    <bool name="config_suspendWhenScreenOffDueToProximity">true</bool>
 
     <!-- MMS user agent string -->
     <string name="config_mms_user_agent" translatable="false">ZTE_A2022P/MMS/ZTE-Android-MMS-V2.0</string>
@@ -359,9 +372,36 @@
     <bool name="config_supportLongPressPowerWhenNonInteractive">true</bool>
 
     <!-- Fast brightness animation ramp rate in brightness units per second -->
-    <integer translatable="false" name="config_brightness_ramp_rate_fast">200</integer>
+    <integer translatable="false" name="config_brightness_ramp_rate_fast">0</integer>
 
-    <!-- Slow brightness animation ramp rate in brightness units per second -->
-    <integer translatable="false" name="config_brightness_ramp_rate_slow">200</integer>
+    <!-- The bounding path of the cutout region of the main built-in display.
+         Must either be empty if there is no cutout region, or a string that is parsable by
+         {@link android.util.PathParser}.
+
+         The path is assumed to be specified in display coordinates with pixel units and in
+         the display's native orientation, with the origin of the coordinate system at the
+         center top of the display.
+
+         To facilitate writing device-independent emulation overlays, the marker `@dp` can be
+         appended after the path string to interpret coordinates in dp instead of px units.
+         Note that a physical cutout should be configured in pixels for the best results.
+
+         If the display supports multiple resolutions, please define the path config based on the
+         highest resolution so that it can be scaled correctly in each resolution.
+
+         Example for a 10px x 10px square top-center cutout:
+                <string ...>M -5,0 L -5,10 L 5,10 L 5,0 Z</string>
+         Example for a 10dp x 10dp square top-center cutout:
+                <string ...>M -5,0 L -5,10 L 5,10 L 5,0 Z @dp</string>
+
+         @see https://www.w3.org/TR/SVG/paths.html#PathData
+    -->
+    <string name="config_mainBuiltInDisplayCutout">
+        M -40 0
+        L -40 90
+        L 40 90
+        L 40 0
+        Z
+    </string>
 
 </resources>

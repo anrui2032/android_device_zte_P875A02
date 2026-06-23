@@ -1,6 +1,6 @@
 [
   {
-    "repository": "android_kernel_zte_sm8350",
-    "target_path": "kernel/zte/sm8350"
+    "repository": "android_kernel_zte_P875A02",
+    "target_path": "kernel/zte/P875A02"
   }
 ]

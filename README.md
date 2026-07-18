@@ -14,9 +14,9 @@ Basic   | Spec Sheet
 SoC     | Qualcomm SM8350 Snapdragon 888 5G (5 nm)
 CPU     | Octa-core (1x2.84 GHz Cortex-X1 & 3x2.42 GHz Cortex-A78 & 4x1.80 GHz Cortex-A55)
 GPU     | Adreno 660
-Memory  | 6/8 GB RAM
+Memory  | 6 GB / 8 GB RAM
 Shipped Android Version | 11
-Storage | 128/256 GB
+Storage | 128 GB / 256 GB
 Battery | Non-removable Li-Ion 4200 mAh battery
 Display | 1080 x 2400 pixels, 20:9 ratio, 6.67 inches, AMOLED (~395 ppi density)
 Rear Camera  | 64MP (wide) / 64MP (ultrawide) / 5 MP (macro) / 2 MP (depth)

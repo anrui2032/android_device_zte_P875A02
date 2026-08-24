@@ -232,13 +232,13 @@ PRODUCT_PACKAGES += \
     TelephonyResCommon \
     WifiResCommon \
     WifiResTarget \
-    ZTEApertureRes \
-    ZTEFrameworksRes \
-    ZTELineageSDKRes \
-    ZTELineageSettingsRes \
-    ZTESettingsRes \
-    ZTESettingsProviderRes \
-    ZTESystemUIRes
+    ZTEApertureOverlay \
+    ZTEFrameworksOverlay \
+    ZTELineageSDKOverlay \
+    ZTELineageSettingsOverlay \
+    ZTESettingsOverlay \
+    ZTESettingsProviderOverlay \
+    ZTESystemUIOverlay
 
 # Partitions
 PRODUCT_PACKAGES += \

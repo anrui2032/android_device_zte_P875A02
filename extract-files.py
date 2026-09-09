@@ -42,8 +42,10 @@ lib_fixups: lib_fixups_user_type = {
 }
 
 blob_fixups: blob_fixups_user_type = {
+    'system/app/DtsUltra/DtsUltra.apk': blob_fixup()
+        .apktool_patch('blob-patches/DtsUltra'),
     'system_ext/priv-app/ims/ims.apk': blob_fixup()
-        .apktool_patch('ims-patches'),
+        .apktool_patch('blob-patches/ims'),
     'vendor/etc/wifi/wlan/WCNSS_qcom_cfg.ini': blob_fixup()
         .regex_replace('\nEND', '\nread_mac_addr_from_mac_file=1\nEND'),
     (

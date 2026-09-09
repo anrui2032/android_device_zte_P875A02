@@ -103,6 +103,7 @@ vendor/firmware/a660_zap.elf
 vendor/firmware/a660_zap.mdt
 
 # Audio
+system/app/DtsUltra/DtsUltra.apk;OVERRIDES=AudioFX
 vendor/etc/acdbdata/MTP/MTP_Bluetooth_cal.acdb
 vendor/etc/acdbdata/MTP/MTP_General_cal.acdb
 vendor/etc/acdbdata/MTP/MTP_Global_cal.acdb

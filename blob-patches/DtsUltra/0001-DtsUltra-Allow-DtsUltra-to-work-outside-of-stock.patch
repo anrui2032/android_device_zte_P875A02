@@ -1,0 +1,180 @@
+From 89cbbb51e2d1aaea6f94e8ad62ab0582f441411a Mon Sep 17 00:00:00 2001
+From: C457 <android.c357@gmail.com>
+Date: Tue, 5 Nov 2019 13:47:40 -0600
+Subject: [PATCH] DtsUltra: Allow DtsUltra to work outside of stock
+
+* Taken from https://forum.xda-developers.com/android/software/port-dtsx-ultra-dts-headphonex-t3896233/post78817768
+
+Change-Id: I91d070039be0f374eb78e3f4248737a7c9a72703
+Signed-off-by: anrui2032 <anrui2032@gmail.com>
+---
+ AndroidManifest.xml                  |   4 +-
+ .../android/media/audiofx/DtsAudio.smali      | 117 ++++++++++++++++++
+ smali/c/b/a/b.smali                  |   2 +-
+ 3 files changed, 121 insertions(+), 2 deletions(-)
+ create mode 100644 smali/android/media/audiofx/DtsAudio.smali
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 4449408..43a1dd7 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -7,9 +7,11 @@
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+     <uses-permission android:name="android.permission.BLUETOOTH"/>
+     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
++    <uses-permission android:name="android.permission.MODIFY_DEFAULT_AUDIO_EFFECTS"/>
+     <permission android:description="@string/dts_permission_effect_description" android:label="@string/dts_permission_effect_title" android:name="com.dts.permission.DTS_EFFECT" android:protectionLevel="normal"/>
+     <uses-permission android:name="com.dts.permission.DTS_EFFECT"/>
+     <application android:allowBackup="true" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:icon="@mipmap/dts_dtsx_icon" android:label="@string/app_name" android:theme="@style/AppTheme">
++        <uses-library android:name="android.media.audiofx" android:required="true"/>
+         <activity android:configChanges="orientation|screenLayout|screenSize" android:label="@string/app_short_name" android:launchMode="singleTask" android:name="com.dts.dtsxultra.activities.MainActivity" android:screenOrientation="user" android:theme="@style/AppTheme"/>
+         <activity android:label="@string/app_short_name" android:launchMode="singleTask" android:name="com.dts.dtsxultra.activities.ListeningProfileActivity"/>
+         <activity android:configChanges="orientation|screenLayout|screenSize" android:exported="true" android:label="@string/app_short_name" android:name="com.dts.dtsxultra.activities.SplashActivity" android:screenOrientation="user">
+@@ -18,7 +20,7 @@
+                 <category android:name="android.intent.category.LAUNCHER"/>
+             </intent-filter>
+             <intent-filter>
+-                <action android:name="android.intent.zte.dts"/>
++                <action android:name="android.media.action.DISPLAY_AUDIO_EFFECT_CONTROL_PANEL"/>
+                 <category android:name="android.intent.category.DEFAULT"/>
+             </intent-filter>
+         </activity>
+diff --git a/smali/android/media/audiofx/DtsAudio.smali b/smali/android/media/audiofx/DtsAudio.smali
+new file mode 100644
+index 0000000..13f2e1b
+--- /dev/null
++++ b/smali/android/media/audiofx/DtsAudio.smali
+@@ -0,0 +1,117 @@
++.class public Landroid/media/audiofx/DtsAudio;
++.super Landroid/media/audiofx/AudioEffect;
++.source "DtsAudio.java"
++
++
++# static fields
++.field private static final TAG:Ljava/lang/String;
++
++
++# direct methods
++.method static constructor <clinit>()V
++    .locals 1
++
++    .line 16
++    const-class v0, Landroid/media/audiofx/DtsAudio;
++
++    invoke-virtual {v0}, Ljava/lang/Class;->getSimpleName()Ljava/lang/String;
++
++    move-result-object v0
++
++    sput-object v0, Landroid/media/audiofx/DtsAudio;->TAG:Ljava/lang/String;
++
++    return-void
++.end method
++
++.method public constructor <init>(Ljava/util/UUID;Ljava/util/UUID;II)V
++    .locals 0
++    .param p1, "type"    # Ljava/util/UUID;
++    .param p2, "uuid"    # Ljava/util/UUID;
++    .param p3, "priority"    # I
++    .param p4, "audioSession"    # I
++    .annotation system Ldalvik/annotation/Throws;
++        value = {
++            Ljava/lang/IllegalStateException;,
++            Ljava/lang/IllegalArgumentException;,
++            Ljava/lang/UnsupportedOperationException;,
++            Ljava/lang/RuntimeException;
++        }
++    .end annotation
++
++    .line 22
++    invoke-direct {p0, p1, p2, p3, p4}, Landroid/media/audiofx/AudioEffect;-><init>(Ljava/util/UUID;Ljava/util/UUID;II)V
++
++    .line 23
++    return-void
++.end method
++
++
++# virtual methods
++.method public getEnabled()Z
++    .locals 1
++    .annotation system Ldalvik/annotation/Throws;
++        value = {
++            Ljava/lang/IllegalStateException;
++        }
++    .end annotation
++
++    .line 32
++    invoke-super {p0}, Landroid/media/audiofx/AudioEffect;->getEnabled()Z
++
++    move-result v0
++
++    return v0
++.end method
++
++.method public getParameter([B[B)I
++    .locals 1
++    .param p1, "param"    # [B
++    .param p2, "value"    # [B
++    .annotation system Ldalvik/annotation/Throws;
++        value = {
++            Ljava/lang/IllegalStateException;
++        }
++    .end annotation
++
++    .line 44
++    invoke-super {p0, p1, p2}, Landroid/media/audiofx/AudioEffect;->getParameter([B[B)I
++
++    move-result v0
++
++    return v0
++.end method
++
++.method public setEnabled(Z)I
++    .locals 1
++    .param p1, "enabled"    # Z
++    .annotation system Ldalvik/annotation/Throws;
++        value = {
++            Ljava/lang/IllegalStateException;
++        }
++    .end annotation
++
++    .line 27
++    invoke-super {p0, p1}, Landroid/media/audiofx/AudioEffect;->setEnabled(Z)I
++
++    move-result v0
++
++    return v0
++.end method
++
++.method public setParameter([B[B)I
++    .locals 1
++    .param p1, "param"    # [B
++    .param p2, "value"    # [B
++    .annotation system Ldalvik/annotation/Throws;
++        value = {
++            Ljava/lang/IllegalStateException;
++        }
++    .end annotation
++
++    .line 38
++    invoke-super {p0, p1, p2}, Landroid/media/audiofx/AudioEffect;->setParameter([B[B)I
++
++    move-result v0
++
++    return v0
++.end method
+diff --git a/smali/c/b/a/b.smali b/smali/c/b/a/b.smali
+index 5b474a6..6a09fea 100644
+--- a/smali/c/b/a/b.smali
++++ b/smali/c/b/a/b.smali
+@@ -64,7 +64,7 @@
+ 
+     new-instance v3, Lc/b/a/c;
+ 
+-    const/16 v4, -0x16
++    const/4 v4, -0x0
+ 
+     invoke-direct {v3, v1, v2, v0, v4}, Lc/b/a/c;-><init>(Ljava/util/UUID;Ljava/util/UUID;II)V
+ 
+-- 
+2.47.3
+

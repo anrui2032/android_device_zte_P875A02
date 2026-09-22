@@ -1,0 +1,61 @@
+//
+// Copyright (C) 2026 The LineageOS Project
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// UDFPS long press sensor sub-HAL.
+//
+// The sensors HAL on this device is Qualcomm's prebuilt SSC HAL
+// (sensors.ssc.so). It is managed by the sensors multi-HAL service
+// (android.hardware.sensors-service.multihal), which reads the list of sub-HAL
+// libraries from /vendor/etc/sensors/hals.conf and merges the sensor list of
+// every library it manages to load. An additional, source built sub-HAL can
+// therefore be shipped next to the prebuilt one instead of replacing it.
+//
+// The multi-HAL resolves the names from hals.conf by trying dlopen() with no
+// prefix first and then with /vendor/lib64/hw/ and /odm/lib64/hw/ prepended, so
+// installing into hw/ keeps this library next to the other HAL implementations
+// while still being found. The name in hals.conf has to match the installed
+// file name exactly; stem is pinned to the module name so that the two cannot
+// drift apart. The LineageOS sm8750 UDFPS sub-HAL is shipped the same way
+// (module and file name both "sensors.xiaomi.sm8750.udfps", listed verbatim in
+// its hals.conf), which confirms no "lib" prefix is applied to these dotted
+// module names.
+//
+// See UdfpsSubHal.h and UdfpsUeventMonitor.h for the sensor this exposes and
+// how the FOD press is bridged from the kernel.
+cc_library_shared {
+    name: "sensors.lineage.udfps",
+    defaults: ["hidl_defaults"],
+    stem: "sensors.lineage.udfps",
+    vendor: true,
+    relative_install_path: "hw",
+
+    srcs: [
+        "UdfpsSubHal.cpp",
+        "UdfpsUeventMonitor.cpp",
+    ],
+
+    // Exports include/V2_0, which holds SubHal.h, the IHalProxyCallback
+    // definition and the SUB_HAL_2_0_VERSION macro.
+    header_libs: [
+        "android.hardware.sensors@2.0-multihal.header",
+    ],
+
+    shared_libs: [
+        "android.hardware.sensors@1.0",
+        "android.hardware.sensors@2.0",
+        // Provides ScopedWakelock, which is how a sub-HAL holds a wake lock
+        // for the events it posts through the HalProxy.
+        "android.hardware.sensors@2.0-ScopedWakelock",
+        "libbase",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+    ],
+
+    cflags: [
+        "-DLOG_TAG=\"UdfpsSubHal\"",
+    ],
+}

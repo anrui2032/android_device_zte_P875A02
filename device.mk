@@ -273,9 +273,16 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.sensor.stepcounter.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepcounter.xml \
     frameworks/native/data/etc/android.hardware.sensor.stepdetector.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.stepdetector.xml
 
+# The sensors HAL in use is the prebuilt Qualcomm SSC HAL. It is managed by the
+# multihal service, which loads every sub-HAL listed in this file, so the UDFPS
+# long press sensor can be shipped as an extra sub-HAL next to it.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/sensors/hals.conf:$(TARGET_COPY_OUT_VENDOR)/etc/sensors/hals.conf
+
 PRODUCT_PACKAGES += \
     android.hardware.sensors-service.multihal \
-    libsensorndkbridge
+    libsensorndkbridge \
+    sensors.lineage.udfps
 
 # Shipping API
 PRODUCT_SHIPPING_API_LEVEL := 30

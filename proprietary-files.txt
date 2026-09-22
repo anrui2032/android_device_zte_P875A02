@@ -1418,7 +1418,9 @@ vendor/etc/sensors/config/sns_tilt_sw_disabled.json
 vendor/etc/sensors/config/sns_tilt_sw_enabled.json
 vendor/etc/sensors/config/sns_tilt_to_wake.json
 vendor/etc/sensors/config/sns_wrist_pedo.json
-vendor/etc/sensors/hals.conf
+# vendor/etc/sensors/hals.conf is shipped by the device tree instead, so that
+# the UDFPS long press sensor sub-HAL can be appended to the multihal list.
+# See device/zte/P875A02/sensors/hals.conf and device.mk.
 vendor/etc/sensors/proto/descriptor.proto
 vendor/etc/sensors/proto/nanopb.proto
 vendor/etc/sensors/proto/sns_accel.proto

@@ -409,4 +409,21 @@
 
     <!-- Whether to enable fp unlock when screen turns off on udfps devices -->
     <bool name="config_screen_off_udfps_enabled">true</bool>
+
+    <!-- Default value for fp screen off unlock toggle. AmbientDisplayConfiguration
+         ANDs this into screenOffUdfpsEnabled(), which is what lets DozeSensors
+         register the UDFPS long press sensor; the Settings toggle reads it as
+         its default too. Note that UdfpsController#isScreenOffUnlockEnabled()
+         additionally requires the user facing
+         Settings.Secure.SCREEN_OFF_UNLOCK_UDFPS_ENABLED to be non zero, which
+         is what actually gates starting authentication from a dark screen. -->
+    <bool name="config_screen_off_udfps_default_on">true</bool>
+
+    <!-- Sensor string type reported by the UDFPS long press sensor sub-HAL
+         through SensorInfo#typeAsString. SystemUI's DozeSensors looks the
+         sensor up by this string type and turns a FOD press during AOD into
+         AuthController#onAodInterrupt, which reaches
+         UdfpsController#onAodInterrupt and starts fingerprint authentication.
+         Must match the typeAsString exposed by sensors.lineage.udfps. -->
+    <string name="config_dozeUdfpsLongPressSensorType" translatable="false">org.lineageos.sensor.udfps</string>
 </resources>

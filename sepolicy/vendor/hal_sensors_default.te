@@ -1,3 +1,8 @@
 set_prop(hal_sensors_default, vendor_sensors_prop)
 
 allow hal_sensors_default sensors_device:chr_file rw_file_perms;
+
+# The UDFPS long press sensor sub-HAL subscribes to the kernel uevent stream to
+# detect a FOD press while the panel is in AOD. The ZTE touch driver reports it
+# through kobject_uevent_env() on the "zte_touch" platform device.
+allow hal_sensors_default self:netlink_kobject_uevent_socket { bind create read };

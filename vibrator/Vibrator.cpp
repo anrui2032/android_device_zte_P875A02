@@ -397,10 +397,11 @@ ndk::ScopedAStatus Vibrator::getCapabilities(int32_t* _aidl_return) {
         return ndk::ScopedAStatus::ok();
     }
 
-    if (ff.mSupportGain)
-        *_aidl_return |= IVibrator::CAP_AMPLITUDE_CONTROL;
-    if (ff.mSupportEffects)
+    if (ff.mSupportEffects) {
+        if (ff.mSupportGain)
+            *_aidl_return |= IVibrator::CAP_AMPLITUDE_CONTROL;
         *_aidl_return |= IVibrator::CAP_PERFORM_CALLBACK;
+    }
     if (ff.mSupportExternalControl)
         *_aidl_return |= IVibrator::CAP_EXTERNAL_CONTROL;
 
@@ -484,6 +485,9 @@ ndk::ScopedAStatus Vibrator::perform(Effect effect, EffectStrength es, const std
 
 ndk::ScopedAStatus Vibrator::getSupportedEffects(std::vector<Effect>* _aidl_return) {
     if (ledVib.mDetected)
+        return ndk::ScopedAStatus::ok();
+
+    if (!ff.mSupportEffects)
         return ndk::ScopedAStatus::ok();
 
     *_aidl_return = {Effect::CLICK, Effect::DOUBLE_CLICK, Effect::TICK, Effect::THUD,

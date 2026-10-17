@@ -1128,13 +1128,10 @@ system_ext/etc/permissions/qti_permissions.xml
 system_ext/framework/qcrilhook.jar
 system_ext/priv-app/qcrilmsgtunnel/qcrilmsgtunnel.apk
 vendor/bin/hw/qcrilNrd
-vendor/bin/init.ssdaemon_vendor.sh
 vendor/bin/qtigetprop
 vendor/bin/qtisetprop
-vendor/bin/ssdaemon_vendor
 vendor/etc/init/init-qcril-data.rc
 vendor/etc/init/qcrilNrd.rc
-vendor/etc/init/ssdaemon_vendor.rc
 vendor/etc/qcril_database/qcrilNr.db
 vendor/etc/qcril_database/upgrade/config/6.0_config.sql
 vendor/etc/qcril_database/upgrade/config/7.0_config.sql

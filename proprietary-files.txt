@@ -760,6 +760,13 @@ vendor/etc/qdcm_calib_data_Visionox-RM692E1-HBM51-1080-2400-6P67Inch.xml
 vendor/etc/qdcm_calib_data_Visionox-RM692E1-HBMOTP-1080-2400-6P67Inch.xml
 vendor/etc/snapdragon_color_libs_config.xml
 
+# Face Unlock
+system/lib64/libcrypto.so:vendor/lib64/libcrypto-v31.so;FIX_SONAME
+system/lib64/libfaceid_data_save.so:vendor/lib64/libfaceid_data_save.so
+system/lib64/libzteFaceRecognition.so:vendor/lib64/libzteFaceRecognition.so
+system/lib64/libzteFaceRecognitionModels.so:vendor/lib64/libzteFaceRecognitionModels.so
+system/lib64/libzteTie_Arm.so:vendor/lib64/libzteTie_Arm.so
+
 # FASTCV
 vendor/lib/libfastcvdsp_stub.so
 vendor/lib/libfastcvopt.so

@@ -55,6 +55,9 @@ blob_fixups: blob_fixups_user_type = {
         .regex_replace('.*media_codecs_(google_audio|google_c2|google_telephony|google_video|vendor_audio).*\n', '')
         .regex_replace('.*media_codecs_google_c2.*\n', '')
         .regex_replace('<Settings>', '<Settings>\n        <Domain name="telephony" enabled="true" />'),
+    'vendor/lib64/libfaceid_data_save.so': blob_fixup()
+        .replace_needed('libcrypto.so', 'libcrypto-v31.so')
+        .remove_needed('libssl.so'),
     'vendor/lib64/libFNVfbEngineHAL.so': blob_fixup()
         .clear_symbol_version('AHardwareBuffer_allocate')
         .clear_symbol_version('AHardwareBuffer_describe')

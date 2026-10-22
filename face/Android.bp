@@ -1,0 +1,37 @@
+//
+// Copyright (C) 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_binary {
+    name: "android.hardware.biometrics.face-service.P875A02",
+    relative_install_path: "hw",
+    vendor: true,
+    init_rc: ["android.hardware.biometrics.face-service.P875A02.rc"],
+    vintf_fragments: ["android.hardware.biometrics.face-service.P875A02.xml"],
+    srcs: [
+        "Face.cpp",
+        "Session.cpp",
+        "ZTEFaceEngine.cpp",
+        "FaceEngineLoader.cpp",
+        "CameraSource.cpp",
+        "main.cpp",
+    ],
+    cflags: ["-Wall", "-Werror"],
+    header_libs: [
+        "media_ndk_headers",
+    ],
+    shared_libs: [
+        "libbase",
+        "libbinder_ndk",
+        "liblog",
+        "libnativewindow",
+        "libmediandk",
+        "libdl",
+        "android.hardware.biometrics.face-V4-ndk",
+        "android.hardware.biometrics.common-V4-ndk",
+        "android.hardware.keymaster-V4-ndk",
+        "android.hardware.common-V2-ndk",
+        "libcamera2ndk_vendor",
+    ],
+}

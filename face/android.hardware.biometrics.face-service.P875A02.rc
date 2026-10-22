@@ -1,0 +1,8 @@
+on post-fs-data
+    mkdir /data/vendor/face 0770 system system
+
+service vendor.face-hal /vendor/bin/hw/android.hardware.biometrics.face-service.P875A02
+    interface aidl android.hardware.biometrics.face.IFace/default
+    class hal
+    user system
+    group system

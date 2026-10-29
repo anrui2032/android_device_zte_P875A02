@@ -175,7 +175,8 @@ PRODUCT_PACKAGES += \
     init.recovery.qcom.rc \
     init.target.rc \
     init.vendor.rc \
-    ueventd.qcom.rc
+    ueventd.qcom.rc \
+    ueventd.zte.rc
 
 # ION
 $(call soong_config_set_bool,libion,legacy_impl,true)

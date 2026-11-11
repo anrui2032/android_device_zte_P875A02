@@ -1,19 +1,39 @@
 # Camera
-/vendor/lib(64)?/libipebpsstriping\.so    u:object_r:same_process_hal_file:s0
+/vendor/bin/camerahalvs                                                                         u:object_r:camerahalvs_exec:s0
+/vendor/lib(64)?/libipebpsstriping\.so                                                          u:object_r:same_process_hal_file:s0
+
+# Face
+/data/vendor/face(/.*)?                                                                         u:object_r:vendor_face_data_file:s0
+/(vendor|system/vendor)/bin/hw/android\.hardware\.biometrics\.face-service\.P875A02             u:object_r:hal_face_default_exec:s0
 
 # Fingerprint
-/data/vendor/goodix/gf_data(/.*)?                                                               u:object_r:vendor_goodix_data_file:s0
+/data/vendor/goodix(/.*)?                                                                       u:object_r:vendor_goodix_data_file:s0
 /dev/goodix_fp                                                                                  u:object_r:fingerprint_device:s0
 /(vendor|system/vendor)/bin/hw/android\.hardware\.biometrics\.fingerprint-service\.P875A02      u:object_r:hal_fingerprint_default_exec:s0
 
+# IFAA
+/(vendor|system/vendor)/bin/hw/vendor\.zte\.fingerprint\.ifaahidl@1\.0-service                  u:object_r:vendor_ifaa_daemon_exec:s0
+
 # Logdump
-/logdump(/.*)?                            u:object_r:logdump_file:s0
+/logdump(/.*)?                                                                                  u:object_r:logdump_file:s0
+
+# NFC
+/dev/st54spi                                                                                    u:object_r:nfc_device:s0
 
 # Partitions
-/dev/block/platform/soc/1d84000\.ufshc/by-name/logdump        u:object_r:logdump_block_device:s0
+/dev/block/platform/soc/1d84000\.ufshc/by-name/logdump                                          u:object_r:logdump_block_device:s0
 
-# WiFi
-/vendor/bin/wifi-mac-generator                                u:object_r:wifi-mac-generator_exec:s0
+# Power
+/mnt/vendor/persist/zstats(/.*)?                                                                u:object_r:vendor_zte_battery_record_file:s0
+
+# Secure element
+/(vendor|system/vendor)/bin/hw/android\.hardware\.secure_element@1\.2-service                   u:object_r:hal_secure_element_default_exec:s0
 
 # Vibrator
-/(vendor|system/vendor)/bin/hw/android\.hardware\.vibrator\.service\.P875A02    u:object_r:hal_vibrator_default_exec:s0
+/(vendor|system/vendor)/bin/hw/vendor\.qti\.hardware\.vibrator\.service\.P875A02                u:object_r:hal_vibrator_default_exec:s0
+
+# Widevine
+/mnt/vendor/persist/data/pfm/licenses(/.*)?                                                     u:object_r:vendor_zte_license_file:s0
+
+# WiFi
+/vendor/bin/wifi-mac-generator                                                                  u:object_r:wifi-mac-generator_exec:s0

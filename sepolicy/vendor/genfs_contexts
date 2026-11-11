@@ -1,0 +1,12 @@
+# Display
+genfscon sysfs /devices/platform/soc/soc:qcom,dsi-display-primary/fod_ui                      u:object_r:vendor_sysfs_fod_ui:s0
+
+# Touchscreen
+genfscon proc /touchscreen/wake_gesture                                                       u:object_r:vendor_proc_touchscreen:s0
+genfscon sysfs /devices/platform/goodix_ts.0/goodix_fod_pressed                               u:object_r:vendor_sysfs_goodix_ts:s0
+
+# Wakeup
+genfscon sysfs /devices/platform/goodix_ts.0/wakeup                                           u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/884000.i2c/i2c-5/5-0008/wakeup                           u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/soc:charger_policy_service/wakeup                        u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/soc:charger_policy_service/power_supply/policy/wakeup    u:object_r:sysfs_wakeup:s0

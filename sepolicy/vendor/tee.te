@@ -1,2 +1,6 @@
 allow tee mnt_vendor_file:dir w_dir_perms;
 allow tee mnt_vendor_file:file create_file_perms;
+allow tee vendor_goodix_data_file:dir { read write open add_name remove_name search };
+allow tee vendor_goodix_data_file:file { read write create map unlink open };
+allow tee vendor_zte_license_file:dir r_dir_perms;
+allow tee vendor_zte_license_file:file r_file_perms;

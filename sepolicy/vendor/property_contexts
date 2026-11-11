@@ -1,26 +1,25 @@
 # Camera
-vendor.camera.    u:object_r:vendor_camera_prop:s0
+vendor.camera.                      u:object_r:vendor_camera_prop:s0
 
 # DRM
-vendor.drm.keystatus    u:object_r:vendor_display_prop:s0
+vendor.drm.keystatus                u:object_r:vendor_display_prop:s0
 
-# Fingerprint
-vendor.goodix.    u:object_r:vendor_fingerprint_prop:s0
+# DTS Audio
+ro.vendor.dts.                      u:object_r:vendor_audio_prop:s0
+vendor.dts.                         u:object_r:vendor_audio_prop:s0
 
 # GPS
-vendor.gps.                  u:object_r:vendor_gps_prop:s0
+vendor.gps.                         u:object_r:vendor_gps_prop:s0
 
 # RIL
 ro.vendor.csc.modemhash             u:object_r:vendor_radio_prop:s0
-vendor.asus.operator.iso-country    u:object_r:vendor_radio_prop:s0
 
 # Sensors
-vendor.proximity.                           u:object_r:vendor_sensors_prop:s0
+vendor.proximity.                   u:object_r:vendor_sensors_prop:s0
 
 # Thermal
-vendor.thermal.current.perf.conf    u:object_r:vendor_thermal_prop:s0
-vendor.thermal.engine.version       u:object_r:vendor_thermal_prop:s0
+vendor.thermal.mode_cur             u:object_r:vendor_jsonweb_default_prop:s0
+vendor.thermal.mode_type            u:object_r:vendor_jsonweb_default_prop:s0
 
-# ZRAM
-persist.vendor.zram    u:object_r:vendor_mpctl_prop:s0
-vendor.zram.           u:object_r:vendor_mpctl_prop:s0
+# ZTE feature
+ro.vendor.feature.                  u:object_r:vendor_feature_prop:s0

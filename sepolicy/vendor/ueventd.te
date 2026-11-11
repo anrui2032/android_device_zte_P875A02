@@ -1,0 +1,2 @@
+allow ueventd logdump_file:dir search;
+allow ueventd logdump_file:file r_file_perms;

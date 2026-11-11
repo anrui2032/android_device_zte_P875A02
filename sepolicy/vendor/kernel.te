@@ -1,0 +1,4 @@
+allow kernel logdump_file:dir search;
+allow kernel logdump_file:file r_file_perms;
+allow kernel vendor_sysfs_battery_supply:dir search;
+allow kernel vendor_sysfs_battery_supply:file r_file_perms;

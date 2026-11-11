@@ -1,0 +1,11 @@
+# Battery
+persist.oem.battery.            u:object_r:system_prop:s0
+
+# Camera
+ro.camerahalvs.firstboot        u:object_r:chvsfirstboot_prop:s0
+
+# Radio
+persist.radio.sap_silent_pin    u:object_r:vendor_jsonweb_default_prop:s0
+
+# ZTE feature
+persist.zte.                    u:object_r:system_prop:s0

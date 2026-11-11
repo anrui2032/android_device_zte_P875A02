@@ -1,15 +1,19 @@
-# Camera
-type vendor_proc_camera, fs_type, proc_type;
-
 # Display
-type vendor_proc_graphics, fs_type, proc_type;
+type vendor_sysfs_fod_ui, sysfs_type, fs_type;
 
-# EVT
-type vendor_proc_evt, fs_type, proc_type;
+# Face
+type vendor_face_data_file, file_type, data_file_type;
 
 # Fingerprint
 type vendor_goodix_data_file, file_type, data_file_type;
-type vendor_proc_fingerprint, fs_type, proc_type;
+type vendor_sysfs_goodix_ts, sysfs_type, fs_type;
 
 # Logdump
 type logdump_file, file_type;
+
+# Power
+type vendor_zte_battery_record_file, file_type, data_file_type;
+type vendor_zte_license_file, file_type, data_file_type;
+
+# Touchscreen
+type vendor_proc_touchscreen, fs_type, proc_type;

@@ -1,0 +1,17 @@
+type hal_ifaa_hwservice, hwservice_manager_type;
+type vendor_ifaa_daemon, domain;
+type vendor_ifaa_daemon_exec, exec_type, vendor_file_type, file_type;
+
+add_hwservice(vendor_ifaa_daemon, hal_ifaa_hwservice);
+get_prop(vendor_ifaa_daemon, hwservicemanager_prop)
+init_daemon_domain(vendor_ifaa_daemon)
+
+allow dumpstate vendor_ifaa_daemon:binder call;
+allow system_app hal_ifaa_hwservice:hwservice_manager find;
+allow system_app vendor_ifaa_daemon:binder call;
+allow untrusted_app_all vendor_ifaa_daemon:binder call;
+allow vendor_ifaa_daemon dumpstate:fd use;
+allow vendor_ifaa_daemon hwservicemanager:binder { call transfer };
+allow vendor_ifaa_daemon ion_device:chr_file { ioctl read open };
+allow vendor_ifaa_daemon rootfs:lnk_file getattr;
+allow vendor_ifaa_daemon tee_device:chr_file { ioctl read write open };

@@ -1,2 +1,8 @@
 # Fingerprint
 vendor.goodix.hardware.biometrics.fingerprint::IGoodixFingerprintDaemon    u:object_r:hal_fingerprint_hwservice:s0
+
+# IFAA
+vendor.zte.fingerprint.ifaahidl::IIfaaDaemon                               u:object_r:hal_ifaa_hwservice:s0
+
+# Radio
+vendor.zte.hardware.radio::IVendorRadio                                    u:object_r:hal_telephony_hwservice:s0

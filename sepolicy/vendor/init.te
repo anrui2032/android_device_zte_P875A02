@@ -1,0 +1,1 @@
+allow init logdump_file:dir { mounton setattr };

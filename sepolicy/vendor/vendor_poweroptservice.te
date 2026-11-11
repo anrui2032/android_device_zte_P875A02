@@ -1,0 +1,1 @@
+dontaudit vendor_poweroptservice self:capability { dac_override dac_read_search };

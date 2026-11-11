@@ -1,7 +1,13 @@
-get_prop(vendor_init, vendor_thermal_prop)
-get_prop(vendor_init, vendor_fingerprint_prop)
 set_prop(vendor_init, vendor_camera_prop)
+set_prop(vendor_init, vendor_feature_prop)
+set_prop(vendor_init, vendor_ssr_prop)
+set_prop(vendor_init, vendor_system_prop)
 
-allow vendor_init vendor_goodix_data_file:file create_file_perms;
+allow vendor_init block_device:lnk_file setattr;
+allow vendor_init cgroup:file getattr;
 allow vendor_init vendor_goodix_data_file:dir create_dir_perms;
-allow vendor_init vendor_proc_camera:file rw_file_perms;
+allow vendor_init vendor_goodix_data_file:file create_file_perms;
+allow vendor_init vendor_zte_battery_record_file:dir create_dir_perms;
+allow vendor_init vendor_zte_battery_record_file:file create_file_perms;
+allow vendor_init vendor_zte_license_file:dir create_dir_perms;
+allow vendor_init vendor_zte_license_file:file create_file_perms;

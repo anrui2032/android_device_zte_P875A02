@@ -8,16 +8,30 @@
 
 #include "Session.h"
 
+#include <android-base/file.h>
 #include <android-base/logging.h>
 #include <android/native_window_aidl.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 #include <random>
 
 namespace aidl::android::hardware::biometrics::face {
 
 using aidl::android::hardware::biometrics::common::OperationContext;
+
+namespace {
+constexpr char kAttentionPath[] = "/data/vendor/face/attention";
+constexpr int64_t kAuthTimeoutMs = 5000;
+
+int64_t nowMs() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
+}
+}  // namespace
 
 Session::Session(int32_t sensorId, int32_t userId, std::shared_ptr<ISessionCallback> cb)
     : mSensorId(sensorId),
@@ -26,7 +40,36 @@ Session::Session(int32_t sensorId, int32_t userId, std::shared_ptr<ISessionCallb
       mCb(std::move(cb)) {
     LOG(INFO) << "native session sensor=" << mSensorId << " user=" << mUserId
               << " folder=" << mFolder;
+    mAttention = loadAttention();
+    mEngine.setAttention(mAttention);
     mWorker = std::thread([this] { workerLoop(); });
+}
+
+bool Session::loadAttention() {
+    std::string content;
+    if (::android::base::ReadFileToString(kAttentionPath, &content) && !content.empty()) {
+        return content[0] != '0';
+    }
+    return true;
+}
+
+bool Session::saveAttention(bool enabled) {
+    const std::string tmp = std::string(kAttentionPath) + ".tmp";
+    if (!::android::base::WriteStringToFile(enabled ? "1" : "0", tmp, 0600, getuid(), getgid())) {
+        PLOG(ERROR) << "failed to write " << tmp;
+        return false;
+    }
+    if (::rename(tmp.c_str(), kAttentionPath) != 0) {
+        PLOG(ERROR) << "failed to rename " << tmp;
+        ::unlink(tmp.c_str());
+        return false;
+    }
+    return true;
+}
+
+void Session::applyAttention() {
+    mAttention = loadAttention();
+    mEngine.setAttention(mAttention);
 }
 
 Session::~Session() {
@@ -109,6 +152,7 @@ ndk::ScopedAStatus Session::enroll(
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
+    applyAttention();
 
     stopCamera();
     mDone = false;
@@ -139,9 +183,17 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
         return ndk::ScopedAStatus::ok();
     }
     (void)operationId;
+    applyAttention();
+    LOG(INFO) << "authenticate attention=" << mAttention;
     stopCamera();
-    mDone = false;
-    mOp = Op::AUTH;
+    {
+        std::lock_guard<std::mutex> lock(mFrameMutex);
+        mDone = false;
+        mAuthCompareFailed = false;
+        mAuthDeadlineMs = nowMs() + kAuthTimeoutMs;
+        mOp = Op::AUTH;
+    }
+    mFrameCv.notify_one();
     if (!mCamera.start(nullptr, [this](const uint8_t* d, int32_t w, int32_t h,
                                        CameraSource::Orientation o) { onFrame(d, w, h, o); })) {
         reportError(Error::HW_UNAVAILABLE);
@@ -173,9 +225,22 @@ void Session::workerLoop() {
         Frame frame;
         {
             std::unique_lock<std::mutex> lock(mFrameMutex);
-            mFrameCv.wait(lock, [this] { return mWorkerStop || mPendingFrame; });
+            if (mOp.load() == Op::AUTH && !mDone.load()) {
+                const auto deadline = std::chrono::steady_clock::time_point(
+                    std::chrono::milliseconds(mAuthDeadlineMs.load()));
+                mFrameCv.wait_until(lock, deadline, [this] { return mWorkerStop || mPendingFrame; });
+            } else {
+                mFrameCv.wait(lock, [this] { return mWorkerStop || mPendingFrame; });
+            }
             if (mWorkerStop) {
                 return;
+            }
+            if (!mPendingFrame) {
+                lock.unlock();
+                if (mOp.load() == Op::AUTH && !mDone.load() && nowMs() >= mAuthDeadlineMs.load()) {
+                    finishAuthTimeout();
+                }
+                continue;
             }
             frame = std::move(*mPendingFrame);
             mPendingFrame.reset();
@@ -240,6 +305,10 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
             reportError(Error::UNABLE_TO_PROCESS, ret);
         }
     } else if (op == Op::AUTH) {
+        if (nowMs() >= mAuthDeadlineMs.load()) {
+            finishAuthTimeout();
+            return;
+        }
         const int32_t ret =
             mEngine.authenticate(nv21, width, height, static_cast<int32_t>(orientation), &faceId);
         LOG(INFO) << "auth frame ret=" << ret << " faceId=" << faceId
@@ -248,11 +317,10 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
             mDone = true;
             mCb->onAuthenticationSucceeded(faceId, keymaster::HardwareAuthToken{});
             scheduleCameraStop();
-        } else if (ret == 201) {
-            mDone = true;
-            mCb->onAuthenticationFailed();
-            scheduleCameraStop();
         } else if (ret > 0) {
+            if (ret == 201) {
+                mAuthCompareFailed = true;
+            }
             sendAuthFrame(ret);
             ZTEFaceEngine::ImageInfo info;
             if (mEngine.imageInfo(&info) == 0) {
@@ -267,6 +335,20 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
             reportError(Error::UNABLE_TO_PROCESS, ret);
         }
     }
+}
+
+void Session::finishAuthTimeout() {
+    if (mDone.exchange(true)) {
+        return;
+    }
+    if (mAuthCompareFailed.load()) {
+        LOG(INFO) << "auth window ended: compare failure";
+        mCb->onAuthenticationFailed();
+    } else {
+        LOG(INFO) << "auth window ended: no compare failure";
+        reportError(Error::TIMEOUT);
+    }
+    scheduleCameraStop();
 }
 
 ndk::ScopedAStatus Session::detectInteraction(std::shared_ptr<common::ICancellationSignal>* out) {
@@ -330,15 +412,29 @@ ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& ids) {
 }
 
 ndk::ScopedAStatus Session::getFeatures() {
-    mCb->onFeaturesRetrieved({});
+    applyAttention();
+    std::vector<Feature> features;
+    if (mAttention) {
+        features.push_back(Feature::REQUIRE_ATTENTION);
+    }
+    LOG(INFO) << "getFeatures attention=" << mAttention;
+    mCb->onFeaturesRetrieved(features);
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Session::setFeature(const keymaster::HardwareAuthToken&, Feature feature, bool) {
+ndk::ScopedAStatus Session::setFeature(const keymaster::HardwareAuthToken&, Feature feature,
+                                       bool enabled) {
     if (feature != Feature::REQUIRE_ATTENTION) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
+    if (!saveAttention(enabled)) {
+        reportError(Error::UNABLE_TO_PROCESS);
+        return ndk::ScopedAStatus::ok();
+    }
+    mAttention = enabled;
+    mEngine.setAttention(enabled);
+    LOG(INFO) << "setFeature attention=" << enabled;
     mCb->onFeatureSet(feature);
     return ndk::ScopedAStatus::ok();
 }
@@ -347,10 +443,7 @@ namespace {
 bool isQuietRetryCode(int32_t ret) {
     switch (ret) {
         case 1:
-        case 2:
-        case 4:
         case 12:
-        case 48:
         case 101:
             return true;
         default:
@@ -360,24 +453,29 @@ bool isQuietRetryCode(int32_t ret) {
 
 AcquiredInfo acquiredInfoFor(int32_t ret) {
     switch (ret) {
-        case 5:
-            return AcquiredInfo::NOT_DETECTED;
-        case 6:
-            return AcquiredInfo::TOO_FAR;
-        case 7:
-            return AcquiredInfo::TOO_CLOSE;
+        case 1:
         case 8:
-            return AcquiredInfo::FACE_TOO_LEFT;
-        case 9:
-            return AcquiredInfo::FACE_TOO_HIGH;
-        case 10:
-            return AcquiredInfo::FACE_TOO_RIGHT;
-        case 11:
-            return AcquiredInfo::FACE_TOO_LOW;
-        case 21:
-            return AcquiredInfo::FACE_OBSCURED;
-        case 30:
+            return AcquiredInfo::NOT_DETECTED;
+        case 2:
+            return AcquiredInfo::POOR_GAZE;
+        case 3:
+            return AcquiredInfo::TOO_BRIGHT;
+        case 4:
             return AcquiredInfo::TOO_DARK;
+        case 5:
+            return AcquiredInfo::TOO_BRIGHT;
+        case 6:
+        case 7:
+        case 15:
+            return AcquiredInfo::FACE_OBSCURED;
+        case 9:
+            return AcquiredInfo::POOR_GAZE;
+        case 10:
+            return AcquiredInfo::TOO_MUCH_MOTION;
+        case 13:
+            return AcquiredInfo::TOO_FAR;
+        case 14:
+            return AcquiredInfo::TOO_CLOSE;
         default:
             return AcquiredInfo::INSUFFICIENT;
     }
@@ -473,6 +571,7 @@ ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
+    applyAttention();
 
     stopCamera();
     ANativeWindow* window = nullptr;

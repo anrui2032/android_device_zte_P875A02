@@ -87,6 +87,7 @@ class Session : public BnSession {
                       CameraSource::Orientation orientation);
     void workerLoop();
     void stopWorker();
+    void finishAuthTimeout();
     void sendAuthFrame(int32_t ret);
     void sendEnrollFrame(int32_t ret);
     std::shared_ptr<common::ICancellationSignal> makeCancel();
@@ -94,6 +95,9 @@ class Session : public BnSession {
     void scheduleCameraStop();
     void stopCamera();
     int64_t authenticatorId() const;
+    bool loadAttention();
+    bool saveAttention(bool enabled);
+    void applyAttention();
 
     const int32_t mSensorId;
     const int32_t mUserId;
@@ -106,6 +110,8 @@ class Session : public BnSession {
     std::atomic<Op> mOp{Op::NONE};
     std::atomic<bool> mDone{false};
     std::atomic<int64_t> mChallenge{0};
+    std::atomic<int64_t> mAuthDeadlineMs{0};
+    std::atomic<bool> mAuthCompareFailed{false};
     std::thread mStopThread;
     std::thread mWorker;
     std::mutex mFrameMutex;
@@ -122,6 +128,7 @@ class Session : public BnSession {
     int32_t mEnrollFinalDelay = 0;
     int32_t mEnrollFaceId = 0;
     bool mEnrollSucceeded = false;
+    bool mAttention = true;
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

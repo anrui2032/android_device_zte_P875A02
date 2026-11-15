@@ -11,6 +11,7 @@
 #include <android-base/logging.h>
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 
@@ -19,6 +20,8 @@ namespace aidl::android::hardware::biometrics::face {
 namespace {
 
 constexpr int32_t kPixelFormatNv21 = 2;
+constexpr int32_t kOrientationLeft = 2;
+constexpr int32_t kOrientationRight = 8;
 
 }  // namespace
 
@@ -75,6 +78,14 @@ void ZTEFaceEngine::deinit() {
     }
 }
 
+void ZTEFaceEngine::setAttention(bool enabled) {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (mAttention != enabled) {
+        LOG(INFO) << "attention detection " << (enabled ? "enabled" : "disabled");
+    }
+    mAttention = enabled;
+}
+
 int32_t ZTEFaceEngine::count(int32_t* out) const {
     std::lock_guard<std::mutex> lock(mLock);
     if (mHandle == 0 || out == nullptr) {
@@ -99,8 +110,24 @@ int32_t ZTEFaceEngine::call(bool enroll, const uint8_t* nv21, int32_t width, int
     image.height = height;
     image.stride = width;
     image.stride_chroma = width;
-    return enroll ? mLoader.enroll(mHandle, &image, faceId, mConfig)
-                  : mLoader.unlock(mHandle, &image, faceId, 1);
+    const int32_t config = mAttention ? 0 : kConfigDisableEyeDetect;
+    if (enroll) {
+        int32_t rotW = width;
+        int32_t rotH = height;
+        if (orientation == kOrientationLeft || orientation == kOrientationRight) {
+            rotW = height;
+            rotH = width;
+        }
+        const int32_t side = (std::min(rotW, rotH) * 7) / 8;
+        ZTERect roi{};
+        roi.left = (rotW - side) / 2;
+        roi.top = (rotH - side) / 2;
+        roi.right = roi.left + side;
+        roi.bottom = roi.top + side;
+        image.roi = &roi;
+        return mLoader.enroll(mHandle, &image, faceId, config);
+    }
+    return mLoader.unlock(mHandle, &image, faceId, 1, config);
 }
 
 int32_t ZTEFaceEngine::enroll(const uint8_t* nv21, int32_t width, int32_t height,

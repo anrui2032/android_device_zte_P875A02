@@ -16,6 +16,9 @@ namespace aidl::android::hardware::biometrics::face {
 
 class ZTEFaceEngine {
   public:
+    static constexpr int32_t kConfigDisableEyeDetect = 0x1;
+    static constexpr int32_t kConfigDisableLiveness = 0x2;
+
     struct ImageInfo {
         float quality = -1.0f;
         int32_t hasFace = 0;
@@ -33,6 +36,7 @@ class ZTEFaceEngine {
 
     bool init(const std::string& folder, bool encrypt, int32_t config = 0);
     void deinit();
+    void setAttention(bool enabled);
 
     int32_t count(int32_t* out) const;
 
@@ -53,6 +57,7 @@ class ZTEFaceEngine {
     int64_t mHandle = 0;
     bool mEncrypt = false;
     int32_t mConfig = 0;
+    bool mAttention = true;
     std::string mFolder;
     FaceEngineLoader mLoader;
 };

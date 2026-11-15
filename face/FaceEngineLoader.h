@@ -51,7 +51,7 @@ class FaceEngineLoader {
     using DeinitFn = void (*)(int64_t);
     using CountFn = int32_t (*)(const char*, int32_t*, int32_t, void*);
     using EnrollFn = int32_t (*)(int64_t, const ZTEFaceRecImage*, int32_t*, int32_t);
-    using UnlockFn = int32_t (*)(int64_t, const ZTEFaceRecImage*, int32_t*, int32_t);
+    using UnlockFn = int32_t (*)(int64_t, const ZTEFaceRecImage*, int32_t*, int32_t, int32_t);
     using ImageInfoFn = int32_t (*)(int64_t, void*);
     using DeleteAllFn = int32_t (*)(const char*, int64_t, int32_t, void*);
 

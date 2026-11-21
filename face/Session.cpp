@@ -81,11 +81,33 @@ Session::~Session() {
     mEngine.deinit();
 }
 
-std::shared_ptr<common::ICancellationSignal> Session::makeCancel() {
-    return ndk::SharedRefBase::make<FnCancel>([this] {
-        mDone = true;
-        mCamera.stop();
+std::shared_ptr<common::ICancellationSignal> Session::makeCancel(uint64_t gen) {
+    std::weak_ptr<Session> weak = ref<Session>();
+    return ndk::SharedRefBase::make<FnCancel>([weak, gen] {
+        if (auto self = weak.lock()) {
+            self->cancelOp(gen);
+        }
     });
+}
+
+void Session::cancelOp(uint64_t gen) {
+    if (gen == 0 || mOpGen.load() != gen) {
+        return;
+    }
+    if (mDone.exchange(true)) {
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(mFrameMutex);
+        mOp = Op::NONE;
+        mPendingFrame.reset();
+    }
+    mFrameCv.notify_all();
+    stopCamera();
+    LOG(INFO) << "operation canceled gen=" << gen;
+    if (mCb) {
+        mCb->onError(Error::CANCELED, 0);
+    }
 }
 
 void Session::reportError(Error e, int32_t vendor) {
@@ -143,7 +165,8 @@ ndk::ScopedAStatus Session::enroll(
     const keymaster::HardwareAuthToken&, EnrollmentType, const std::vector<Feature>&,
     const std::optional<::aidl::android::hardware::common::NativeHandle>&,
     std::shared_ptr<common::ICancellationSignal>* out) {
-    *out = makeCancel();
+    const uint64_t gen = ++mOpGen;
+    *out = makeCancel(gen);
     if (mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
@@ -173,7 +196,8 @@ ndk::ScopedAStatus Session::enroll(
 ndk::ScopedAStatus Session::authenticate(int64_t operationId,
                                          std::shared_ptr<common::ICancellationSignal>* out) {
     LOG(INFO) << "authenticate called user=" << mUserId;
-    *out = makeCancel();
+    const uint64_t gen = ++mOpGen;
+    *out = makeCancel(gen);
     if (mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
@@ -273,9 +297,11 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
             mCb->onEnrollmentProgress(0, mEnrollRemaining);
         } else {
             if (++mEnrollFinalDelay >= 15) {
-                mDone = true;
-                mCb->onEnrollmentProgress(mEnrollFaceId, 0);
-                scheduleCameraStop();
+                if (!mDone.exchange(true)) {
+                    mOp = Op::NONE;
+                    mCb->onEnrollmentProgress(mEnrollFaceId, 0);
+                    scheduleCameraStop();
+                }
             }
         }
         return;
@@ -301,8 +327,9 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
                 LOG(INFO) << "enroll retry";
             }
         } else {
-            mDone = true;
-            reportError(Error::UNABLE_TO_PROCESS, ret);
+            if (!mDone.exchange(true)) {
+                reportError(Error::UNABLE_TO_PROCESS, ret);
+            }
         }
     } else if (op == Op::AUTH) {
         if (nowMs() >= mAuthDeadlineMs.load()) {
@@ -314,9 +341,11 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
         LOG(INFO) << "auth frame ret=" << ret << " faceId=" << faceId
                   << " orientation=" << static_cast<int32_t>(orientation);
         if (ret == 0) {
-            mDone = true;
-            mCb->onAuthenticationSucceeded(faceId, keymaster::HardwareAuthToken{});
-            scheduleCameraStop();
+            if (!mDone.exchange(true)) {
+                mOp = Op::NONE;
+                mCb->onAuthenticationSucceeded(faceId, keymaster::HardwareAuthToken{});
+                scheduleCameraStop();
+            }
         } else if (ret > 0) {
             if (ret == 201) {
                 mAuthCompareFailed = true;
@@ -331,8 +360,9 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
                 LOG(INFO) << "auth retry";
             }
         } else {
-            mDone = true;
-            reportError(Error::UNABLE_TO_PROCESS, ret);
+            if (!mDone.exchange(true)) {
+                reportError(Error::UNABLE_TO_PROCESS, ret);
+            }
         }
     }
 }
@@ -341,6 +371,7 @@ void Session::finishAuthTimeout() {
     if (mDone.exchange(true)) {
         return;
     }
+    mOp = Op::NONE;
     if (mAuthCompareFailed.load()) {
         LOG(INFO) << "auth window ended: compare failure";
         mCb->onAuthenticationFailed();
@@ -352,7 +383,7 @@ void Session::finishAuthTimeout() {
 }
 
 ndk::ScopedAStatus Session::detectInteraction(std::shared_ptr<common::ICancellationSignal>* out) {
-    *out = makeCancel();
+    *out = makeCancel(0);
     reportError(Error::UNABLE_TO_PROCESS);
     return ndk::ScopedAStatus::ok();
 }
@@ -562,7 +593,8 @@ ndk::ScopedAStatus Session::onContextChanged(const OperationContext&) {
 
 ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
                                               std::shared_ptr<common::ICancellationSignal>* out) {
-    *out = makeCancel();
+    const uint64_t gen = ++mOpGen;
+    *out = makeCancel(gen);
     if (mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();

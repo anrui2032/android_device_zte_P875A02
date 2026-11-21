@@ -90,7 +90,8 @@ class Session : public BnSession {
     void finishAuthTimeout();
     void sendAuthFrame(int32_t ret);
     void sendEnrollFrame(int32_t ret);
-    std::shared_ptr<common::ICancellationSignal> makeCancel();
+    std::shared_ptr<common::ICancellationSignal> makeCancel(uint64_t gen);
+    void cancelOp(uint64_t gen);
     void reportError(Error e, int32_t vendor = 0);
     void scheduleCameraStop();
     void stopCamera();
@@ -108,7 +109,8 @@ class Session : public BnSession {
     ZTEFaceEngine mEngine;
     CameraSource mCamera;
     std::atomic<Op> mOp{Op::NONE};
-    std::atomic<bool> mDone{false};
+    std::atomic<bool> mDone{true};
+    std::atomic<uint64_t> mOpGen{0};
     std::atomic<int64_t> mChallenge{0};
     std::atomic<int64_t> mAuthDeadlineMs{0};
     std::atomic<bool> mAuthCompareFailed{false};

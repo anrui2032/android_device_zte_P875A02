@@ -151,14 +151,30 @@ CameraSource::~CameraSource() {
     stop();
 }
 
+void CameraSource::notifyError(int error) {
+    if (!mRunning.exchange(false)) {
+        return;
+    }
+    ErrorCallback errCb;
+    {
+        std::lock_guard<std::mutex> lock(mCallbackLock);
+        errCb = mErrorCallback;
+    }
+    if (errCb) {
+        errCb(error);
+    }
+}
+
 void CameraSource::onDeviceDisconnected(void* ctx, ACameraDevice*) {
     auto* self = static_cast<CameraSource*>(ctx);
     LOG(WARNING) << "camera disconnected";
-    self->mRunning = false;
+    self->notifyError(-1);
 }
 
-void CameraSource::onDeviceError(void*, ACameraDevice*, int error) {
+void CameraSource::onDeviceError(void* ctx, ACameraDevice*, int error) {
+    auto* self = static_cast<CameraSource*>(ctx);
     LOG(ERROR) << "camera error=" << error;
+    self->notifyError(error);
 }
 
 void CameraSource::onSessionReady(void*, ACameraCaptureSession*) {}
@@ -279,7 +295,7 @@ void CameraSource::handleImage(AImageReader* reader) {
     }
 }
 
-bool CameraSource::start(ANativeWindow* preview, FrameCallback cb) {
+bool CameraSource::start(ANativeWindow* preview, FrameCallback cb, ErrorCallback errCb) {
     std::lock_guard<std::mutex> lock(mLock);
     if (mRunning.load()) {
         return true;
@@ -287,6 +303,7 @@ bool CameraSource::start(ANativeWindow* preview, FrameCallback cb) {
     {
         std::lock_guard<std::mutex> cbLock(mCallbackLock);
         mCallback = std::move(cb);
+        mErrorCallback = std::move(errCb);
         mRenderWindow = nullptr;
     }
 
@@ -499,6 +516,7 @@ void CameraSource::closeLocked() {
         windowToRelease = mRenderWindow;
         mRenderWindow = nullptr;
         mCallback = nullptr;
+        mErrorCallback = nullptr;
     }
     if (windowToRelease != nullptr) {
         ANativeWindow_release(windowToRelease);

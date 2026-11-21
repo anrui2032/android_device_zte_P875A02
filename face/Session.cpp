@@ -205,10 +205,12 @@ ndk::ScopedAStatus Session::enroll(
         mOp = Op::ENROLL;
     }
     mFrameCv.notify_one();
-    if (!mCamera.start(nullptr, [this, gen](const uint8_t* d, int32_t w, int32_t h,
-                                            CameraSource::Orientation o) {
-            onFrame(gen, d, w, h, o);
-        })) {
+    if (!mCamera.start(
+            nullptr,
+            [this, gen](const uint8_t* d, int32_t w, int32_t h, CameraSource::Orientation o) {
+                onFrame(gen, d, w, h, o);
+            },
+            [this, gen](int err) { onCameraError(gen, err); })) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
@@ -243,13 +245,30 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
         mOp = Op::AUTH;
     }
     mFrameCv.notify_one();
-    if (!mCamera.start(nullptr, [this, gen](const uint8_t* d, int32_t w, int32_t h,
-                                            CameraSource::Orientation o) {
-            onFrame(gen, d, w, h, o);
-        })) {
+    if (!mCamera.start(
+            nullptr,
+            [this, gen](const uint8_t* d, int32_t w, int32_t h, CameraSource::Orientation o) {
+                onFrame(gen, d, w, h, o);
+            },
+            [this, gen](int err) { onCameraError(gen, err); })) {
         reportError(Error::HW_UNAVAILABLE);
     }
     return ndk::ScopedAStatus::ok();
+}
+
+void Session::onCameraError(uint64_t gen, int error) {
+    if (mOpGen.load() != gen || mDone.exchange(true)) {
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(mFrameMutex);
+        mOp = Op::NONE;
+        mPendingFrame.reset();
+    }
+    mFrameCv.notify_all();
+    LOG(ERROR) << "camera error during op gen=" << gen << " error=" << error;
+    reportError(Error::HW_UNAVAILABLE);
+    scheduleCameraStop(gen);
 }
 
 void Session::onFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
@@ -381,6 +400,7 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
         } else {
             if (mOpGen.load() == gen && !mDone.exchange(true)) {
                 reportError(Error::UNABLE_TO_PROCESS, ret);
+                scheduleCameraStop(gen);
             }
         }
     } else if (op == Op::AUTH) {
@@ -417,6 +437,7 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
         } else {
             if (mOpGen.load() == gen && !mDone.exchange(true)) {
                 reportError(Error::UNABLE_TO_PROCESS, ret);
+                scheduleCameraStop(gen);
             }
         }
     }
@@ -704,10 +725,12 @@ ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
     }
     mFrameCv.notify_one();
     LOG(INFO) << "enroll options preview=" << (window != nullptr);
-    if (!mCamera.start(window, [this, gen](const uint8_t* d, int32_t w, int32_t h,
-                                           CameraSource::Orientation o) {
-            onFrame(gen, d, w, h, o);
-        })) {
+    if (!mCamera.start(
+            window,
+            [this, gen](const uint8_t* d, int32_t w, int32_t h, CameraSource::Orientation o) {
+                onFrame(gen, d, w, h, o);
+            },
+            [this, gen](int err) { onCameraError(gen, err); })) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }

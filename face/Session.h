@@ -83,6 +83,7 @@ class Session : public BnSession {
 
     void onFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
                  CameraSource::Orientation orientation);
+    void onCameraError(uint64_t gen, int error);
     void processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
                       CameraSource::Orientation orientation);
     void workerLoop();

@@ -34,6 +34,7 @@ class CameraSource {
 
     using FrameCallback = std::function<void(const uint8_t* nv21, int32_t width, int32_t height,
                                              Orientation orientation)>;
+    using ErrorCallback = std::function<void(int error)>;
 
     CameraSource() = default;
     ~CameraSource();
@@ -41,7 +42,7 @@ class CameraSource {
     CameraSource(const CameraSource&) = delete;
     CameraSource& operator=(const CameraSource&) = delete;
 
-    bool start(ANativeWindow* preview, FrameCallback cb);
+    bool start(ANativeWindow* preview, FrameCallback cb, ErrorCallback errCb = nullptr);
     void stop();
 
   private:
@@ -52,6 +53,7 @@ class CameraSource {
     static void onImage(void* ctx, AImageReader* reader);
     static void onPreviewImage(void* ctx, AImageReader* reader);
 
+    void notifyError(int error);
     void handleImage(AImageReader* reader);
     void renderPreview(ANativeWindow* window, const uint8_t* nv21, int32_t width, int32_t height);
     void closeLocked();
@@ -60,6 +62,7 @@ class CameraSource {
     std::mutex mLock;
     std::mutex mCallbackLock;
     FrameCallback mCallback;
+    ErrorCallback mErrorCallback;
     Orientation mOrientation = Orientation::UP;
     int32_t mSensorOrientation = 0;
 

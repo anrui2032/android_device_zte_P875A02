@@ -13,3 +13,5 @@ allow hal_face_default fwk_camera_service:service_manager find;
 allow hal_face_default vendor_data_file:dir search;
 allow hal_face_default vendor_face_data_file:dir create_dir_perms;
 allow hal_face_default vendor_face_data_file:file create_file_perms;
+
+dontaudit hal_face_default system_userdir_file:dir search;

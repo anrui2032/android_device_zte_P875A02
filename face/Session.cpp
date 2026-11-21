@@ -154,10 +154,6 @@ void Session::scheduleCameraStop(uint64_t gen) {
     });
 }
 
-int64_t Session::authenticatorId() const {
-    return static_cast<int64_t>(std::hash<std::string>{}(mFolder));
-}
-
 ndk::ScopedAStatus Session::generateChallenge() {
     if (mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
@@ -195,7 +191,7 @@ ndk::ScopedAStatus Session::enroll(
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
-    applyAttention();
+    ZTEFaceEngine::instance().setAttention(true);
 
     stopCamera();
     {
@@ -354,41 +350,27 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
     }
     const Op op = mOp.load();
     int32_t faceId = (op == Op::AUTH) ? 0 : -1;
-    if (op == Op::ENROLL && mEnrollGen != gen) {
-        mEnrollGen = gen;
-        mEnrollSucceeded = false;
-        mEnrollFaceId = 0;
-        mEnrollRemaining = 0;
-        mEnrollFinalDelay = 0;
-    }
-    if (op == Op::ENROLL && mEnrollSucceeded) {
-        if (mEnrollRemaining > 1) {
-            mEnrollRemaining = std::max(1, mEnrollRemaining - 5);
-            mCb->onEnrollmentProgress(0, mEnrollRemaining);
-        } else {
-            if (++mEnrollFinalDelay >= 15) {
-                if (mOpGen.load() == gen && !mDone.exchange(true)) {
-                    mOp = Op::NONE;
-                    mCb->onEnrollmentProgress(mEnrollFaceId, 0);
-                    scheduleCameraStop(gen);
-                }
-            }
-        }
-        return;
-    }
     if (op == Op::ENROLL) {
         const int32_t ret = ZTEFaceEngine::instance().enroll(
             nv21, width, height, static_cast<int32_t>(orientation), &faceId);
         LOG(INFO) << "enroll frame " << width << "x" << height << " ret=" << ret
                   << " faceId=" << faceId;
         if (mOpGen.load() != gen || mDone.load()) {
+            if (ret == 0) {
+                LOG(INFO) << "enroll canceled after write, rolling back template";
+                ZTEFaceEngine::instance().deleteAll(mFolder, true);
+            }
             return;
         }
         if (ret == 0) {
-            mEnrollSucceeded = true;
-            mEnrollFaceId = faceId;
-            mEnrollRemaining = 100;
-            mCb->onEnrollmentProgress(0, mEnrollRemaining);
+            if (mOpGen.load() == gen && !mDone.exchange(true)) {
+                mOp = Op::NONE;
+                mCb->onEnrollmentProgress(faceId, 0);
+                scheduleCameraStop(gen);
+            } else {
+                LOG(INFO) << "enroll canceled concurrently after write, rolling back template";
+                ZTEFaceEngine::instance().deleteAll(mFolder, true);
+            }
         } else if (ret > 0 && ret != 203 && ret != 301) {
             sendEnrollFrame(ret);
             ZTEFaceEngine::ImageInfo info;
@@ -650,12 +632,12 @@ void Session::sendEnrollFrame(int32_t ret) {
 }
 
 ndk::ScopedAStatus Session::getAuthenticatorId() {
-    mCb->onAuthenticatorIdRetrieved(authenticatorId());
+    mCb->onAuthenticatorIdRetrieved(0);
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::invalidateAuthenticatorId() {
-    mCb->onAuthenticatorIdInvalidated(authenticatorId() ^ 0x5a5a5a5a5a5a5a5aLL);
+    mCb->onAuthenticatorIdInvalidated(0);
     return ndk::ScopedAStatus::ok();
 }
 
@@ -716,7 +698,7 @@ ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
-    applyAttention();
+    ZTEFaceEngine::instance().setAttention(true);
 
     stopCamera();
     ANativeWindow* window = nullptr;

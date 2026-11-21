@@ -124,10 +124,17 @@ bool nv21FromImage(AImage* image, std::vector<uint8_t>* out, int32_t* outWidth, 
     uint8_t* vu = out->data() + static_cast<size_t>(width) * height;
     if (uPix == 2 && vPix == 2 && u == v + 1) {
         for (int32_t row = 0; row < height / 2; ++row) {
-            std::memcpy(vu + static_cast<size_t>(row) * width,
-                        v + static_cast<size_t>(crop.top / 2 + row) * vRow +
-                            static_cast<size_t>(crop.left / 2) * vPix,
-                        width);
+            const size_t vOff = static_cast<size_t>(crop.top / 2 + row) * vRow +
+                                static_cast<size_t>(crop.left / 2) * vPix;
+            uint8_t* dst = vu + static_cast<size_t>(row) * width;
+            if (vOff + static_cast<size_t>(width) <= static_cast<size_t>(vLen)) {
+                std::memcpy(dst, v + vOff, width);
+            } else {
+                const size_t uOff = static_cast<size_t>(crop.top / 2 + row) * uRow +
+                                    static_cast<size_t>(crop.left / 2) * uPix;
+                std::memcpy(dst, v + vOff, width - 1);
+                dst[width - 1] = u[uOff + static_cast<size_t>(width / 2 - 1) * uPix];
+            }
         }
     } else {
         for (int32_t row = 0; row < height / 2; ++row) {
@@ -202,14 +209,17 @@ void CameraSource::renderPreview(ANativeWindow* window, const uint8_t* nv21, int
     if (ANativeWindow_lock(window, &buffer, nullptr) != 0) {
         return;
     }
-    if (buffer.bits == nullptr) {
+    const int rotation = (360 - mSensorOrientation % 360) % 360;
+    const int rotatedWidth = rotation % 180 ? height : width;
+    const int rotatedHeight = rotation % 180 ? width : height;
+    if (buffer.bits == nullptr || buffer.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM ||
+        buffer.width < kPreviewSize || buffer.height < kPreviewSize ||
+        buffer.stride < kPreviewSize || rotatedWidth < kPreviewSize ||
+        rotatedHeight < kPreviewSize) {
         ANativeWindow_unlockAndPost(window);
         return;
     }
 
-    const int rotation = (360 - mSensorOrientation % 360) % 360;
-    const int rotatedWidth = rotation % 180 ? height : width;
-    const int rotatedHeight = rotation % 180 ? width : height;
     const int offsetX = (rotatedWidth - kPreviewSize) / 2;
     const int offsetY = (rotatedHeight - kPreviewSize) / 2;
     const uint8_t* vu = nv21 + width * height;

@@ -51,22 +51,32 @@ bool ZTEFaceEngine::init(const std::string& folder, bool encrypt, int32_t config
     }
 
     mFolder = folder;
+    bool actualEncrypt = encrypt;
     ZTEFaceRecInitParam param{};
     param.folder = mFolder.c_str();
     param.config = config;
-    param.use_encryption = encrypt ? 1 : 0;
+    param.use_encryption = actualEncrypt ? 1 : 0;
     param.log_level = 0;
 
     int32_t status = -1;
     mHandle = mLoader.init(&param, &status);
     if (mHandle == 0 || status != 0) {
+        LOG(WARNING) << "zte_FaceRec_init failed status=" << status << " encrypt=" << actualEncrypt
+                     << ", retrying with toggled encryption";
+        actualEncrypt = !actualEncrypt;
+        param.use_encryption = actualEncrypt ? 1 : 0;
+        status = -1;
+        mHandle = mLoader.init(&param, &status);
+    }
+    if (mHandle == 0 || status != 0) {
         LOG(ERROR) << "zte_FaceRec_init status=" << status << " folder=" << folder;
         mHandle = 0;
         return false;
     }
-    mEncrypt = encrypt;
+    mEncrypt = actualEncrypt;
     mConfig = config;
-    LOG(INFO) << "engine ready folder=" << folder << " encrypt=" << encrypt << " config=" << config;
+    LOG(INFO) << "engine ready folder=" << folder << " encrypt=" << actualEncrypt
+              << " config=" << config;
     return true;
 }
 

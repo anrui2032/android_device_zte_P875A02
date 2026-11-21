@@ -5,6 +5,7 @@ binder_call(system_server, hal_face_default)
 
 hal_client_domain(hal_face_default, hal_graphics_allocator)
 
+get_prop(hal_face_default, bootloader_prop)
 get_prop(hal_face_default, camera_config_prop)
 allow hal_face_default surfaceflinger:fd use;
 allow hal_face_default cameraserver_service:service_manager find;

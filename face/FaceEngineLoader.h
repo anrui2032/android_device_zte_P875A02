@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace aidl::android::hardware::biometrics::face {
@@ -12,12 +13,18 @@ namespace aidl::android::hardware::biometrics::face {
 struct ZTEFaceRecInitParam {
     const char* folder;
     int32_t config;
+    int32_t pad0;
     uint8_t use_encryption;
-    uint8_t pad[7];
+    uint8_t pad1[7];
     uint64_t reserved;
     int32_t log_level;
     int32_t pad2;
 };
+static_assert(offsetof(ZTEFaceRecInitParam, folder) == 0x00, "folder offset");
+static_assert(offsetof(ZTEFaceRecInitParam, config) == 0x08, "config offset");
+static_assert(offsetof(ZTEFaceRecInitParam, use_encryption) == 0x10, "use_encryption offset");
+static_assert(offsetof(ZTEFaceRecInitParam, reserved) == 0x18, "reserved offset");
+static_assert(offsetof(ZTEFaceRecInitParam, log_level) == 0x20, "log_level offset");
 static_assert(sizeof(ZTEFaceRecInitParam) == 0x28, "init param");
 
 struct ZTERect {

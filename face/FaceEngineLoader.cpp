@@ -42,6 +42,19 @@ bool FaceEngineLoader::load() {
     getImageInfo = reinterpret_cast<ImageInfoFn>(dlsym(lib, "zte_FaceRec_getImageInfo"));
     deleteAll = reinterpret_cast<DeleteAllFn>(dlsym(lib, "zte_FaceRec_delete_all_face"));
 
+    if (!init || !deinit || !getFaceIdCount || !enroll || !unlock || !getImageInfo || !deleteAll) {
+        LOG(ERROR) << "missing required symbol(s) in " << kLibrary;
+        dlclose(lib);
+        init = nullptr;
+        deinit = nullptr;
+        getFaceIdCount = nullptr;
+        enroll = nullptr;
+        unlock = nullptr;
+        getImageInfo = nullptr;
+        deleteAll = nullptr;
+        return false;
+    }
+
     mLib = lib;
     LOG(INFO) << "loaded " << kLibrary;
     return true;

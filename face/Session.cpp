@@ -41,7 +41,7 @@ Session::Session(int32_t sensorId, int32_t userId, std::shared_ptr<ISessionCallb
     LOG(INFO) << "native session sensor=" << mSensorId << " user=" << mUserId
               << " folder=" << mFolder;
     mAttention = loadAttention();
-    mEngine.setAttention(mAttention);
+    ZTEFaceEngine::instance().setAttention(mAttention.load());
     mWorker = std::thread([this] { workerLoop(); });
 }
 
@@ -70,7 +70,7 @@ bool Session::saveAttention(bool enabled) {
 void Session::applyAttention() {
     const bool enabled = loadAttention();
     mAttention = enabled;
-    mEngine.setAttention(enabled);
+    ZTEFaceEngine::instance().setAttention(enabled);
 }
 
 Session::~Session() {
@@ -80,7 +80,7 @@ Session::~Session() {
     stopCamera();
     stopWorker();
     joinStopThread();
-    mEngine.deinit();
+    ZTEFaceEngine::instance().deinit(this);
 }
 
 std::shared_ptr<common::ICancellationSignal> Session::makeCancel(uint64_t gen) {
@@ -191,7 +191,7 @@ ndk::ScopedAStatus Session::enroll(
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
-    if (!mEngine.init(mFolder, true, 16)) {
+    if (!ZTEFaceEngine::instance().init(this, mFolder, true, 16)) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
@@ -228,7 +228,7 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
-    if (!mEngine.init(mFolder, true, 0)) {
+    if (!ZTEFaceEngine::instance().init(this, mFolder, true, 0)) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
@@ -377,8 +377,8 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
         return;
     }
     if (op == Op::ENROLL) {
-        const int32_t ret =
-            mEngine.enroll(nv21, width, height, static_cast<int32_t>(orientation), &faceId);
+        const int32_t ret = ZTEFaceEngine::instance().enroll(
+            nv21, width, height, static_cast<int32_t>(orientation), &faceId);
         LOG(INFO) << "enroll frame " << width << "x" << height << " ret=" << ret
                   << " faceId=" << faceId;
         if (mOpGen.load() != gen || mDone.load()) {
@@ -392,7 +392,7 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
         } else if (ret > 0 && ret != 203 && ret != 301) {
             sendEnrollFrame(ret);
             ZTEFaceEngine::ImageInfo info;
-            if (mEngine.imageInfo(&info) == 0) {
+            if (ZTEFaceEngine::instance().imageInfo(&info) == 0) {
                 LOG(INFO) << "enroll retry quality=" << info.quality << " hasFace=" << info.hasFace
                           << " rect=" << info.left << "," << info.top << "," << info.right << ","
                           << info.bottom;
@@ -410,8 +410,8 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
             finishAuthTimeout(gen);
             return;
         }
-        const int32_t ret =
-            mEngine.authenticate(nv21, width, height, static_cast<int32_t>(orientation), &faceId);
+        const int32_t ret = ZTEFaceEngine::instance().authenticate(
+            nv21, width, height, static_cast<int32_t>(orientation), &faceId);
         LOG(INFO) << "auth frame ret=" << ret << " faceId=" << faceId
                   << " orientation=" << static_cast<int32_t>(orientation);
         if (mOpGen.load() != gen || mDone.load()) {
@@ -433,7 +433,7 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
             }
             sendAuthFrame(ret);
             ZTEFaceEngine::ImageInfo info;
-            if (mEngine.imageInfo(&info) == 0) {
+            if (ZTEFaceEngine::instance().imageInfo(&info) == 0) {
                 LOG(INFO) << "auth retry quality=" << info.quality << " hasFace=" << info.hasFace
                           << " rect=" << info.left << "," << info.top << "," << info.right << ","
                           << info.bottom;
@@ -487,12 +487,8 @@ ndk::ScopedAStatus Session::enumerateEnrollments() {
         mCb->onEnrollmentsEnumerated({});
         return ndk::ScopedAStatus::ok();
     }
-    if (!mEngine.init(mFolder, true, 0)) {
-        reportError(Error::HW_UNAVAILABLE);
-        return ndk::ScopedAStatus::ok();
-    }
     int32_t count = 0;
-    const int32_t ret = mEngine.count(&count);
+    const int32_t ret = ZTEFaceEngine::instance().count(mFolder, true, &count);
     if (ret != 0) {
         reportError(Error::UNABLE_TO_PROCESS, ret);
         return ndk::ScopedAStatus::ok();
@@ -523,15 +519,11 @@ ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& ids) {
         reportError(Error::UNABLE_TO_REMOVE);
         return ndk::ScopedAStatus::ok();
     }
-    if (!mEngine.init(mFolder, true, 0)) {
-        reportError(Error::UNABLE_TO_REMOVE);
-        return ndk::ScopedAStatus::ok();
-    }
     int32_t count_before = -1;
-    mEngine.count(&count_before);
-    const int32_t ret = mEngine.deleteAll();
+    ZTEFaceEngine::instance().count(mFolder, true, &count_before);
+    const int32_t ret = ZTEFaceEngine::instance().deleteAll(mFolder, true);
     int32_t count_after = -1;
-    mEngine.count(&count_after);
+    ZTEFaceEngine::instance().count(mFolder, true, &count_after);
     LOG(INFO) << "removeEnrollments ret=" << ret << " count=" << count_before << "->" << count_after;
     if (ret != 0) {
         reportError(Error::UNABLE_TO_REMOVE, ret);
@@ -573,7 +565,7 @@ ndk::ScopedAStatus Session::setFeature(const keymaster::HardwareAuthToken&, Feat
         return ndk::ScopedAStatus::ok();
     }
     mAttention = enabled;
-    mEngine.setAttention(enabled);
+    ZTEFaceEngine::instance().setAttention(enabled);
     LOG(INFO) << "setFeature attention=" << enabled;
     mCb->onFeatureSet(feature);
     return ndk::ScopedAStatus::ok();
@@ -681,7 +673,7 @@ ndk::ScopedAStatus Session::close() {
     stopCamera();
     stopWorker();
     joinStopThread();
-    mEngine.deinit();
+    ZTEFaceEngine::instance().deinit(this);
     if (mCb) {
         mCb->onSessionClosed();
     }
@@ -720,7 +712,7 @@ ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
-    if (!mEngine.init(mFolder, true, 16)) {
+    if (!ZTEFaceEngine::instance().init(this, mFolder, true, 16)) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }

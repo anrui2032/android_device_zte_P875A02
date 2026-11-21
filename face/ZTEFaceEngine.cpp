@@ -25,25 +25,38 @@ constexpr int32_t kOrientationRight = 8;
 
 }  // namespace
 
-ZTEFaceEngine::~ZTEFaceEngine() {
-    deinit();
+ZTEFaceEngine& ZTEFaceEngine::instance() {
+    static ZTEFaceEngine engine;
+    return engine;
 }
 
-bool ZTEFaceEngine::init(const std::string& folder, bool encrypt, int32_t config) {
+ZTEFaceEngine::~ZTEFaceEngine() {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (mHandle != 0) {
+        mLoader.deinit(mHandle);
+        mHandle = 0;
+        mOwner = nullptr;
+    }
+}
+
+bool ZTEFaceEngine::init(const void* owner, const std::string& folder, bool encrypt,
+                         int32_t config) {
     std::lock_guard<std::mutex> lock(mLock);
     if (!mLoader.load()) {
         LOG(ERROR) << "failed to load ZTE face engine";
         return false;
     }
+    if (folder.empty() || folder.size() >= sizeof(mFolderBuf)) {
+        return false;
+    }
     if (mHandle != 0) {
-        if (mConfig == config) {
+        if (mFolder == folder && mConfig == config && mRequestedEncrypt == encrypt) {
+            mOwner = owner;
             return true;
         }
         mLoader.deinit(mHandle);
         mHandle = 0;
-    }
-    if (folder.empty() || folder.size() > 199) {
-        return false;
+        mOwner = nullptr;
     }
     if (::mkdir(folder.c_str(), 0700) != 0 && errno != EEXIST) {
         PLOG(ERROR) << "mkdir " << folder;
@@ -51,9 +64,10 @@ bool ZTEFaceEngine::init(const std::string& folder, bool encrypt, int32_t config
     }
 
     mFolder = folder;
+    std::memcpy(mFolderBuf, folder.c_str(), folder.size() + 1);
     bool actualEncrypt = encrypt;
     ZTEFaceRecInitParam param{};
-    param.folder = mFolder.c_str();
+    param.folder = mFolderBuf;
     param.config = config;
     param.use_encryption = actualEncrypt ? 1 : 0;
     param.log_level = 0;
@@ -71,8 +85,11 @@ bool ZTEFaceEngine::init(const std::string& folder, bool encrypt, int32_t config
     if (mHandle == 0 || status != 0) {
         LOG(ERROR) << "zte_FaceRec_init status=" << status << " folder=" << folder;
         mHandle = 0;
+        mOwner = nullptr;
         return false;
     }
+    mOwner = owner;
+    mRequestedEncrypt = encrypt;
     mEncrypt = actualEncrypt;
     mConfig = config;
     LOG(INFO) << "engine ready folder=" << folder << " encrypt=" << actualEncrypt
@@ -80,11 +97,12 @@ bool ZTEFaceEngine::init(const std::string& folder, bool encrypt, int32_t config
     return true;
 }
 
-void ZTEFaceEngine::deinit() {
+void ZTEFaceEngine::deinit(const void* owner) {
     std::lock_guard<std::mutex> lock(mLock);
-    if (mHandle != 0) {
+    if (mHandle != 0 && (owner == nullptr || mOwner == owner)) {
         mLoader.deinit(mHandle);
         mHandle = 0;
+        mOwner = nullptr;
     }
 }
 
@@ -96,12 +114,13 @@ void ZTEFaceEngine::setAttention(bool enabled) {
     mAttention = enabled;
 }
 
-int32_t ZTEFaceEngine::count(int32_t* out) const {
+int32_t ZTEFaceEngine::count(const std::string& folder, bool encrypt, int32_t* out) {
     std::lock_guard<std::mutex> lock(mLock);
-    if (mHandle == 0 || out == nullptr) {
+    if (folder.empty() || out == nullptr || !mLoader.load()) {
         return -1;
     }
-    return mLoader.getFaceIdCount(mFolder.c_str(), out, mEncrypt ? 1 : 0, nullptr);
+    const bool useEncrypt = (mHandle != 0 && mFolder == folder) ? mEncrypt : encrypt;
+    return mLoader.getFaceIdCount(folder.c_str(), out, useEncrypt ? 1 : 0, nullptr);
 }
 
 int32_t ZTEFaceEngine::call(bool enroll, const uint8_t* nv21, int32_t width, int32_t height,
@@ -137,7 +156,11 @@ int32_t ZTEFaceEngine::call(bool enroll, const uint8_t* nv21, int32_t width, int
         image.roi = &roi;
         return mLoader.enroll(mHandle, &image, faceId, config);
     }
-    return mLoader.unlock(mHandle, &image, faceId, 1, config);
+    const int32_t ret = mLoader.unlock(mHandle, &image, nullptr, 0, config);
+    if (ret == 0 && faceId != nullptr) {
+        *faceId = 0;
+    }
+    return ret;
 }
 
 int32_t ZTEFaceEngine::enroll(const uint8_t* nv21, int32_t width, int32_t height,
@@ -150,12 +173,15 @@ int32_t ZTEFaceEngine::authenticate(const uint8_t* nv21, int32_t width, int32_t 
     return call(false, nv21, width, height, orientation, faceId);
 }
 
-int32_t ZTEFaceEngine::deleteAll() {
+int32_t ZTEFaceEngine::deleteAll(const std::string& folder, bool encrypt) {
     std::lock_guard<std::mutex> lock(mLock);
-    if (mHandle == 0) {
+    if (folder.empty() || !mLoader.load()) {
         return -1;
     }
-    return mLoader.deleteAll(mFolder.c_str(), mHandle, mEncrypt ? 1 : 0, nullptr);
+    const bool sameFolder = (mHandle != 0 && mFolder == folder);
+    const int64_t handle = sameFolder ? mHandle : 0;
+    const bool useEncrypt = sameFolder ? mEncrypt : encrypt;
+    return mLoader.deleteAll(folder.c_str(), handle, useEncrypt ? 1 : 0, nullptr);
 }
 
 int32_t ZTEFaceEngine::imageInfo(ImageInfo* out) const {

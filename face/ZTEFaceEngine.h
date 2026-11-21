@@ -28,17 +28,16 @@ class ZTEFaceEngine {
         int32_t bottom = 0;
     };
 
-    ZTEFaceEngine() = default;
-    ~ZTEFaceEngine();
+    static ZTEFaceEngine& instance();
 
     ZTEFaceEngine(const ZTEFaceEngine&) = delete;
     ZTEFaceEngine& operator=(const ZTEFaceEngine&) = delete;
 
-    bool init(const std::string& folder, bool encrypt, int32_t config = 0);
-    void deinit();
+    bool init(const void* owner, const std::string& folder, bool encrypt, int32_t config = 0);
+    void deinit(const void* owner);
     void setAttention(bool enabled);
 
-    int32_t count(int32_t* out) const;
+    int32_t count(const std::string& folder, bool encrypt, int32_t* out);
 
     int32_t enroll(const uint8_t* nv21, int32_t width, int32_t height, int32_t orientation,
                    int32_t* faceId);
@@ -47,17 +46,23 @@ class ZTEFaceEngine {
 
     int32_t imageInfo(ImageInfo* out) const;
 
-    int32_t deleteAll();
+    int32_t deleteAll(const std::string& folder, bool encrypt);
 
   private:
+    ZTEFaceEngine() = default;
+    ~ZTEFaceEngine();
+
     int32_t call(bool enroll, const uint8_t* nv21, int32_t width, int32_t height,
                  int32_t orientation, int32_t* faceId);
 
     mutable std::mutex mLock;
+    const void* mOwner = nullptr;
     int64_t mHandle = 0;
+    bool mRequestedEncrypt = false;
     bool mEncrypt = false;
     int32_t mConfig = 0;
     bool mAttention = true;
+    char mFolderBuf[200] = {};
     std::string mFolder;
     FaceEngineLoader mLoader;
 };

@@ -108,7 +108,6 @@ class Session : public BnSession {
     std::shared_ptr<ISessionCallback> mCb;
 
     mutable std::mutex mLock;
-    ZTEFaceEngine mEngine;
     CameraSource mCamera;
     std::atomic<Op> mOp{Op::NONE};
     std::atomic<bool> mDone{true};

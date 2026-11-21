@@ -37,6 +37,10 @@ ndk::ScopedAStatus Face::getSensorProps(std::vector<SensorProps>* return_val) {
 ndk::ScopedAStatus Face::createSession(int32_t sensorId, int32_t userId,
                                        const std::shared_ptr<ISessionCallback>& cb,
                                        std::shared_ptr<ISession>* return_val) {
+    if (sensorId != kFaceSensorId || cb == nullptr) {
+        LOG(ERROR) << "createSession invalid args sensor=" << sensorId << " cb=" << (cb != nullptr);
+        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_ARGUMENT);
+    }
     LOG(INFO) << "createSession sensor=" << sensorId << " user=" << userId;
     auto s = ndk::SharedRefBase::make<Session>(sensorId, userId, cb);
     *return_val = s;

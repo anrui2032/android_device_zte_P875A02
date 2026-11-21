@@ -98,6 +98,7 @@ class Session : public BnSession {
     void scheduleCameraStop(uint64_t gen);
     void stopCamera();
     void joinStopThread();
+    void rollbackUncommittedEnroll();
     bool loadAttention();
     bool saveAttention(bool enabled);
     void applyAttention();
@@ -135,6 +136,15 @@ class Session : public BnSession {
     };
     std::unique_ptr<Frame> mPendingFrame;
     bool mWorkerStop = false;
+    uint64_t mEnrollGen = 0;
+    int64_t mEnrollFirstFrameMs = 0;
+    AcquiredInfo mEnrollHelpInfo = AcquiredInfo::UNKNOWN;
+    int32_t mEnrollHelpStreak = 0;
+    int32_t mEnrollRemaining = 0;
+    int32_t mEnrollFinalDelay = 0;
+    int32_t mEnrollFaceId = 0;
+    bool mEnrollSucceeded = false;
+    std::atomic<bool> mEnrollUncommitted{false};
     std::atomic<bool> mAttention{true};
 };
 

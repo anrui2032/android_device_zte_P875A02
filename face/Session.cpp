@@ -25,6 +25,9 @@ using aidl::android::hardware::biometrics::common::OperationContext;
 namespace {
 constexpr char kAttentionPath[] = "/data/vendor/face/attention";
 constexpr int64_t kAuthTimeoutMs = 5000;
+constexpr int64_t kEnrollHelpWarmupMs = 400;
+constexpr int32_t kEnrollHelpMinStreak = 5;
+constexpr int32_t kEnrollHelpRepeatFrames = 15;
 
 int64_t nowMs() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -73,6 +76,13 @@ void Session::applyAttention() {
     ZTEFaceEngine::instance().setAttention(enabled);
 }
 
+void Session::rollbackUncommittedEnroll() {
+    if (mEnrollUncommitted.exchange(false)) {
+        LOG(INFO) << "rolling back uncommitted enroll template";
+        ZTEFaceEngine::instance().deleteAll(mFolder, true);
+    }
+}
+
 Session::~Session() {
     mClosed = true;
     mDone = true;
@@ -80,6 +90,7 @@ Session::~Session() {
     stopCamera();
     stopWorker();
     joinStopThread();
+    rollbackUncommittedEnroll();
     ZTEFaceEngine::instance().deinit(this);
 }
 
@@ -106,6 +117,7 @@ void Session::cancelOp(uint64_t gen) {
     }
     mFrameCv.notify_all();
     stopCamera();
+    rollbackUncommittedEnroll();
     LOG(INFO) << "operation canceled gen=" << gen;
     if (mCb) {
         mCb->onError(Error::CANCELED, 0);
@@ -196,6 +208,9 @@ ndk::ScopedAStatus Session::enroll(
     ZTEFaceEngine::instance().setAttention(true);
 
     stopCamera();
+    if (!mDone.exchange(true)) {
+        rollbackUncommittedEnroll();
+    }
     {
         std::lock_guard<std::mutex> frameLock(mFrameMutex);
         mPendingFrame.reset();
@@ -234,6 +249,9 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
     applyAttention();
     LOG(INFO) << "authenticate attention=" << mAttention.load();
     stopCamera();
+    if (!mDone.exchange(true)) {
+        rollbackUncommittedEnroll();
+    }
     {
         std::lock_guard<std::mutex> frameLock(mFrameMutex);
         mPendingFrame.reset();
@@ -270,6 +288,7 @@ void Session::onCameraError(uint64_t gen, int error) {
         mPendingFrame.reset();
     }
     mFrameCv.notify_all();
+    rollbackUncommittedEnroll();
     LOG(ERROR) << "camera error during op gen=" << gen << " error=" << error;
     reportError(Error::HW_UNAVAILABLE);
     scheduleCameraStop(gen);
@@ -356,6 +375,32 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
     }
     const Op op = mOp.load();
     int32_t faceId = (op == Op::AUTH) ? 0 : -1;
+    if (op == Op::ENROLL && mEnrollGen != gen) {
+        mEnrollGen = gen;
+        mEnrollFirstFrameMs = nowMs();
+        mEnrollHelpInfo = AcquiredInfo::UNKNOWN;
+        mEnrollHelpStreak = 0;
+        mEnrollSucceeded = false;
+        mEnrollFaceId = 0;
+        mEnrollRemaining = 0;
+        mEnrollFinalDelay = 0;
+    }
+    if (op == Op::ENROLL && mEnrollSucceeded) {
+        if (mEnrollRemaining > 1) {
+            mEnrollRemaining = std::max(1, mEnrollRemaining - 5);
+            mCb->onEnrollmentProgress(0, mEnrollRemaining);
+        } else if (++mEnrollFinalDelay >= 15) {
+            if (mOpGen.load() == gen && !mDone.exchange(true)) {
+                mEnrollUncommitted.store(false);
+                mOp = Op::NONE;
+                mCb->onEnrollmentProgress(mEnrollFaceId, 0);
+                scheduleCameraStop(gen);
+            } else {
+                rollbackUncommittedEnroll();
+            }
+        }
+        return;
+    }
     if (op == Op::ENROLL) {
         const int32_t ret = ZTEFaceEngine::instance().enroll(
             nv21, width, height, static_cast<int32_t>(orientation), &faceId);
@@ -369,14 +414,16 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
             return;
         }
         if (ret == 0) {
-            if (mOpGen.load() == gen && !mDone.exchange(true)) {
-                mOp = Op::NONE;
-                mCb->onEnrollmentProgress(faceId, 0);
-                scheduleCameraStop(gen);
-            } else {
-                LOG(INFO) << "enroll canceled concurrently after write, rolling back template";
-                ZTEFaceEngine::instance().deleteAll(mFolder, true);
+            mEnrollUncommitted.store(true);
+            if (mOpGen.load() != gen || mDone.load()) {
+                rollbackUncommittedEnroll();
+                return;
             }
+            mEnrollSucceeded = true;
+            mEnrollFaceId = faceId;
+            mEnrollRemaining = 100;
+            mEnrollFinalDelay = 0;
+            mCb->onEnrollmentProgress(0, mEnrollRemaining);
         } else if (ret > 0 && ret != 203 && ret != 301) {
             sendEnrollFrame(ret);
             ZTEFaceEngine::ImageInfo info;
@@ -624,13 +671,28 @@ void Session::sendAuthFrame(int32_t ret) {
 
 void Session::sendEnrollFrame(int32_t ret) {
     if (isQuietRetryCode(ret)) {
+        mEnrollHelpStreak = 0;
         return;
     }
     const AcquiredInfo info = acquiredInfoFor(ret);
-    LOG(INFO) << "enroll acquired ret=" << ret << " info=" << static_cast<int32_t>(info);
     if (info == AcquiredInfo::GOOD) {
+        mEnrollHelpStreak = 0;
         return;
     }
+    if (nowMs() - mEnrollFirstFrameMs < kEnrollHelpWarmupMs) {
+        return;
+    }
+    if (info == mEnrollHelpInfo) {
+        ++mEnrollHelpStreak;
+    } else {
+        mEnrollHelpInfo = info;
+        mEnrollHelpStreak = 1;
+    }
+    if (mEnrollHelpStreak < kEnrollHelpMinStreak ||
+        (mEnrollHelpStreak - kEnrollHelpMinStreak) % kEnrollHelpRepeatFrames != 0) {
+        return;
+    }
+    LOG(INFO) << "enroll acquired ret=" << ret << " info=" << static_cast<int32_t>(info);
     EnrollmentFrame frame;
     frame.stage = EnrollmentStage::FIRST_FRAME_RECEIVED;
     frame.data.acquiredInfo = info;
@@ -661,6 +723,7 @@ ndk::ScopedAStatus Session::close() {
     stopCamera();
     stopWorker();
     joinStopThread();
+    rollbackUncommittedEnroll();
     ZTEFaceEngine::instance().deinit(this);
     if (mCb) {
         mCb->onSessionClosed();
@@ -707,6 +770,9 @@ ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
     ZTEFaceEngine::instance().setAttention(true);
 
     stopCamera();
+    if (!mDone.exchange(true)) {
+        rollbackUncommittedEnroll();
+    }
     ANativeWindow* window = nullptr;
     if (options.surfacePreview.has_value()) {
         window = options.surfacePreview->get();

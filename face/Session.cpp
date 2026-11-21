@@ -240,7 +240,9 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
         std::lock_guard<std::mutex> frameLock(mFrameMutex);
         mPendingFrame.reset();
         mDone = false;
-        mAuthCompareFailed = false;
+        mAuthCompareFailCount = 0;
+        mAuthNoFaceCount = 0;
+        mAuthOtherCount = 0;
         mAuthDeadlineMs = nowMs() + kAuthTimeoutMs;
         mOp = Op::AUTH;
     }
@@ -387,7 +389,7 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
             mEnrollFaceId = faceId;
             mEnrollRemaining = 100;
             mCb->onEnrollmentProgress(0, mEnrollRemaining);
-        } else if (ret > 0) {
+        } else if (ret > 0 && ret != 203 && ret != 301) {
             sendEnrollFrame(ret);
             ZTEFaceEngine::ImageInfo info;
             if (mEngine.imageInfo(&info) == 0) {
@@ -421,9 +423,13 @@ void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int
                 mCb->onAuthenticationSucceeded(faceId, keymaster::HardwareAuthToken{});
                 scheduleCameraStop(gen);
             }
-        } else if (ret > 0) {
-            if (ret == 201) {
-                mAuthCompareFailed = true;
+        } else if (ret > 0 && ret != 203 && ret != 301) {
+            if (ret == 201 || ret == 202) {
+                ++mAuthCompareFailCount;
+            } else if (ret == 1) {
+                ++mAuthNoFaceCount;
+            } else {
+                ++mAuthOtherCount;
             }
             sendAuthFrame(ret);
             ZTEFaceEngine::ImageInfo info;
@@ -448,11 +454,18 @@ void Session::finishAuthTimeout(uint64_t gen) {
         return;
     }
     mOp = Op::NONE;
-    if (mAuthCompareFailed.load()) {
-        LOG(INFO) << "auth window ended: compare failure";
+    const int32_t compareFail = mAuthCompareFailCount.load();
+    const int32_t noFace = mAuthNoFaceCount.load();
+    const int32_t other = mAuthOtherCount.load();
+    const bool compareFailed =
+        compareFail > 0 && compareFail >= noFace && compareFail >= other;
+    if (compareFailed) {
+        LOG(INFO) << "auth window ended: compare/liveness failure (fail=" << compareFail
+                  << " noFace=" << noFace << " other=" << other << ")";
         mCb->onAuthenticationFailed();
     } else {
-        LOG(INFO) << "auth window ended: no compare failure";
+        LOG(INFO) << "auth window ended: timeout (fail=" << compareFail << " noFace=" << noFace
+                  << " other=" << other << ")";
         reportError(Error::TIMEOUT);
     }
     scheduleCameraStop(gen);
@@ -569,9 +582,9 @@ ndk::ScopedAStatus Session::setFeature(const keymaster::HardwareAuthToken&, Feat
 namespace {
 bool isQuietRetryCode(int32_t ret) {
     switch (ret) {
-        case 1:
-        case 12:
-        case 101:
+        case 101:  // ZTE_FACE_AUTH_STATUS_DETECT_FRAME_SELECT_FAILED
+        case 201:  // ZTE_FACE_AUTH_STATUS_FACE_VERITY_FAILED
+        case 202:  // ZTE_FACE_AUTH_STATUS_HACKNESS_FAILED
             return true;
         default:
             return false;
@@ -592,17 +605,23 @@ AcquiredInfo acquiredInfoFor(int32_t ret) {
         case 5:
             return AcquiredInfo::TOO_BRIGHT;
         case 6:
-        case 7:
+        case 11:
         case 15:
             return AcquiredInfo::FACE_OBSCURED;
+        case 7:
+            return AcquiredInfo::MOUTH_COVERING_DETECTED;
         case 9:
             return AcquiredInfo::POOR_GAZE;
         case 10:
             return AcquiredInfo::TOO_MUCH_MOTION;
+        case 12:
+            return AcquiredInfo::INSUFFICIENT;
         case 13:
             return AcquiredInfo::TOO_FAR;
         case 14:
             return AcquiredInfo::TOO_CLOSE;
+        case 102:
+            return AcquiredInfo::TOO_DIFFERENT;
         default:
             return AcquiredInfo::INSUFFICIENT;
     }

@@ -116,7 +116,9 @@ class Session : public BnSession {
     std::atomic<uint64_t> mOpGen{0};
     std::atomic<int64_t> mChallenge{0};
     std::atomic<int64_t> mAuthDeadlineMs{0};
-    std::atomic<bool> mAuthCompareFailed{false};
+    std::atomic<int32_t> mAuthCompareFailCount{0};
+    std::atomic<int32_t> mAuthNoFaceCount{0};
+    std::atomic<int32_t> mAuthOtherCount{0};
     std::mutex mStopMutex;
     std::condition_variable mStopCv;
     bool mCancelStopDelay = false;

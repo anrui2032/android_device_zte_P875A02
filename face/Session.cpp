@@ -135,6 +135,7 @@ void Session::joinStopThread() {
 
 void Session::stopCamera() {
     joinStopThread();
+    mOrientationTracker.stop();
     mCamera.stop();
 }
 
@@ -149,6 +150,7 @@ void Session::scheduleCameraStop(uint64_t gen) {
         const bool shouldStop = !mCancelStopDelay && mOpGen.load() == gen;
         lk.unlock();
         if (shouldStop) {
+            mOrientationTracker.stop();
             mCamera.stop();
         }
     });
@@ -243,12 +245,16 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
         mOp = Op::AUTH;
     }
     mFrameCv.notify_one();
+    mOrientationTracker.start();
     if (!mCamera.start(
             nullptr,
-            [this, gen](const uint8_t* d, int32_t w, int32_t h, CameraSource::Orientation o) {
+            [this, gen](const uint8_t* d, int32_t w, int32_t h, CameraSource::Orientation) {
+                const auto o = CameraSource::orientationFor(mCamera.sensorOrientation(),
+                                                            mOrientationTracker.orientation());
                 onFrame(gen, d, w, h, o);
             },
             [this, gen](int err) { onCameraError(gen, err); })) {
+        mOrientationTracker.stop();
         reportError(Error::HW_UNAVAILABLE);
     }
     return ndk::ScopedAStatus::ok();

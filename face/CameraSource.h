@@ -44,6 +44,8 @@ class CameraSource {
 
     bool start(ANativeWindow* preview, FrameCallback cb, ErrorCallback errCb = nullptr);
     void stop();
+    int32_t sensorOrientation() const { return mSensorOrientation.load(); }
+    static Orientation orientationFor(int32_t sensorOrientation, int32_t screenOrientation);
 
   private:
     static void onDeviceDisconnected(void* ctx, ACameraDevice* dev);
@@ -64,7 +66,7 @@ class CameraSource {
     FrameCallback mCallback;
     ErrorCallback mErrorCallback;
     Orientation mOrientation = Orientation::UP;
-    int32_t mSensorOrientation = 0;
+    std::atomic<int32_t> mSensorOrientation{0};
 
     void* mManager = nullptr;
     void* mDevice = nullptr;

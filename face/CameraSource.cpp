@@ -21,19 +21,6 @@ constexpr int32_t kWidth = 640;
 constexpr int32_t kHeight = 480;
 constexpr int32_t kPreviewSize = 480;
 
-CameraSource::Orientation orientationFromSensor(int sensor) {
-    switch (sensor) {
-        case 0:
-            return CameraSource::Orientation::UP;
-        case 90:
-            return CameraSource::Orientation::LEFT;
-        case 180:
-            return CameraSource::Orientation::DOWN;
-        default:
-            return CameraSource::Orientation::RIGHT;
-    }
-}
-
 std::string chooseFrontCamera(ACameraManager* manager, int* sensorOrientation) {
     ACameraIdList* ids = nullptr;
     if (ACameraManager_getCameraIdList(manager, &ids) != ACAMERA_OK || ids == nullptr) {
@@ -154,6 +141,22 @@ bool nv21FromImage(AImage* image, std::vector<uint8_t>* out, int32_t* outWidth, 
 
 }  // namespace
 
+CameraSource::Orientation CameraSource::orientationFor(int32_t sensorOrientation,
+                                                       int32_t screenOrientation) {
+    const int32_t baseAngle = (360 - ((sensorOrientation % 360) + 360) % 360) % 360;
+    const int32_t faceAngle = (baseAngle + ((screenOrientation % 360) + 360) % 360) % 360;
+    switch (faceAngle) {
+        case 0:
+            return CameraSource::Orientation::UP;
+        case 90:
+            return CameraSource::Orientation::RIGHT;
+        case 180:
+            return CameraSource::Orientation::DOWN;
+        default:
+            return CameraSource::Orientation::LEFT;
+    }
+}
+
 CameraSource::~CameraSource() {
     stop();
 }
@@ -209,7 +212,7 @@ void CameraSource::renderPreview(ANativeWindow* window, const uint8_t* nv21, int
     if (ANativeWindow_lock(window, &buffer, nullptr) != 0) {
         return;
     }
-    const int rotation = (360 - mSensorOrientation % 360) % 360;
+    const int rotation = (360 - mSensorOrientation.load() % 360) % 360;
     const int rotatedWidth = rotation % 180 ? height : width;
     const int rotatedHeight = rotation % 180 ? width : height;
     if (buffer.bits == nullptr || buffer.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM ||
@@ -331,7 +334,7 @@ bool CameraSource::start(ANativeWindow* preview, FrameCallback cb, ErrorCallback
         return false;
     }
     mSensorOrientation = sensor;
-    mOrientation = orientationFromSensor(sensor);
+    mOrientation = orientationFor(sensor, 0);
 
     auto* reader = static_cast<AImageReader*>(nullptr);
     if (AImageReader_newWithUsage(kWidth, kHeight, AIMAGE_FORMAT_YUV_420_888,

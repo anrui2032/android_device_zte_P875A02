@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "CameraSource.h"
+#include "OrientationTracker.h"
 #include "ZTEFaceEngine.h"
 
 namespace aidl::android::hardware::biometrics::face {
@@ -108,6 +109,7 @@ class Session : public BnSession {
 
     mutable std::mutex mLock;
     CameraSource mCamera;
+    OrientationTracker mOrientationTracker;
     std::atomic<Op> mOp{Op::NONE};
     std::atomic<bool> mDone{true};
     std::atomic<bool> mClosed{false};

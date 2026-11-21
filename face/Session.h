@@ -81,20 +81,21 @@ class Session : public BnSession {
         std::function<void()> mFn;
     };
 
-    void onFrame(const uint8_t* nv21, int32_t width, int32_t height,
+    void onFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
                  CameraSource::Orientation orientation);
-    void processFrame(const uint8_t* nv21, int32_t width, int32_t height,
+    void processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
                       CameraSource::Orientation orientation);
     void workerLoop();
     void stopWorker();
-    void finishAuthTimeout();
+    void finishAuthTimeout(uint64_t gen);
     void sendAuthFrame(int32_t ret);
     void sendEnrollFrame(int32_t ret);
     std::shared_ptr<common::ICancellationSignal> makeCancel(uint64_t gen);
     void cancelOp(uint64_t gen);
     void reportError(Error e, int32_t vendor = 0);
-    void scheduleCameraStop();
+    void scheduleCameraStop(uint64_t gen);
     void stopCamera();
+    void joinStopThread();
     int64_t authenticatorId() const;
     bool loadAttention();
     bool saveAttention(bool enabled);
@@ -110,15 +111,20 @@ class Session : public BnSession {
     CameraSource mCamera;
     std::atomic<Op> mOp{Op::NONE};
     std::atomic<bool> mDone{true};
+    std::atomic<bool> mClosed{false};
     std::atomic<uint64_t> mOpGen{0};
     std::atomic<int64_t> mChallenge{0};
     std::atomic<int64_t> mAuthDeadlineMs{0};
     std::atomic<bool> mAuthCompareFailed{false};
+    std::mutex mStopMutex;
+    std::condition_variable mStopCv;
+    bool mCancelStopDelay = false;
     std::thread mStopThread;
     std::thread mWorker;
     std::mutex mFrameMutex;
     std::condition_variable mFrameCv;
     struct Frame {
+        uint64_t gen = 0;
         std::vector<uint8_t> nv21;
         int32_t width = 0;
         int32_t height = 0;
@@ -126,11 +132,12 @@ class Session : public BnSession {
     };
     std::unique_ptr<Frame> mPendingFrame;
     bool mWorkerStop = false;
+    uint64_t mEnrollGen = 0;
     int32_t mEnrollRemaining = 0;
     int32_t mEnrollFinalDelay = 0;
     int32_t mEnrollFaceId = 0;
     bool mEnrollSucceeded = false;
-    bool mAttention = true;
+    std::atomic<bool> mAttention{true};
 };
 
 }  // namespace aidl::android::hardware::biometrics::face

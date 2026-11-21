@@ -176,17 +176,18 @@ void CameraSource::onPreviewImage(void*, AImageReader* reader) {
     }
 }
 
-void CameraSource::renderPreview(const uint8_t* nv21, int32_t width, int32_t height) {
-    if (mRenderWindow == nullptr) {
+void CameraSource::renderPreview(ANativeWindow* window, const uint8_t* nv21, int32_t width,
+                                 int32_t height) {
+    if (window == nullptr) {
         return;
     }
 
     ANativeWindow_Buffer buffer{};
-    if (ANativeWindow_lock(mRenderWindow, &buffer, nullptr) != 0) {
+    if (ANativeWindow_lock(window, &buffer, nullptr) != 0) {
         return;
     }
     if (buffer.bits == nullptr) {
-        ANativeWindow_unlockAndPost(mRenderWindow);
+        ANativeWindow_unlockAndPost(window);
         return;
     }
 
@@ -238,7 +239,7 @@ void CameraSource::renderPreview(const uint8_t* nv21, int32_t width, int32_t hei
                 static_cast<uint32_t>(clamp8(luma + ((91881 * cr) >> 16)));
         }
     }
-    ANativeWindow_unlockAndPost(mRenderWindow);
+    ANativeWindow_unlockAndPost(window);
 }
 
 void CameraSource::handleImage(AImageReader* reader) {
@@ -251,13 +252,31 @@ void CameraSource::handleImage(AImageReader* reader) {
     }
     int32_t width = 0;
     int32_t height = 0;
-    if (nv21FromImage(image, &mNv21, &width, &height)) {
-        renderPreview(mNv21.data(), width, height);
-        if (mCallback) {
-            mCallback(mNv21.data(), width, height, mOrientation);
-        }
-    }
+    const bool converted = nv21FromImage(image, &mNv21, &width, &height);
     AImage_delete(image);
+    if (!converted || !mRunning.load()) {
+        return;
+    }
+
+    FrameCallback cb;
+    ANativeWindow* window = nullptr;
+    Orientation orientation = Orientation::UP;
+    {
+        std::lock_guard<std::mutex> lock(mCallbackLock);
+        cb = mCallback;
+        window = mRenderWindow;
+        if (window != nullptr) {
+            ANativeWindow_acquire(window);
+        }
+        orientation = mOrientation;
+    }
+    if (window != nullptr) {
+        renderPreview(window, mNv21.data(), width, height);
+        ANativeWindow_release(window);
+    }
+    if (cb && mRunning.load()) {
+        cb(mNv21.data(), width, height, orientation);
+    }
 }
 
 bool CameraSource::start(ANativeWindow* preview, FrameCallback cb) {
@@ -265,8 +284,11 @@ bool CameraSource::start(ANativeWindow* preview, FrameCallback cb) {
     if (mRunning.load()) {
         return true;
     }
-    mCallback = std::move(cb);
-    mRenderWindow = nullptr;
+    {
+        std::lock_guard<std::mutex> cbLock(mCallbackLock);
+        mCallback = std::move(cb);
+        mRenderWindow = nullptr;
+    }
 
     auto* manager = ACameraManager_create();
     mManager = manager;
@@ -325,7 +347,10 @@ bool CameraSource::start(ANativeWindow* preview, FrameCallback cb) {
 
     if (preview != nullptr) {
         ANativeWindow_acquire(preview);
-        mRenderWindow = preview;
+        {
+            std::lock_guard<std::mutex> cbLock(mCallbackLock);
+            mRenderWindow = preview;
+        }
         ANativeWindow_setBuffersGeometry(preview, kPreviewSize, kPreviewSize,
                                          AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
         LOG(INFO) << "software preview target " << kPreviewSize;
@@ -418,6 +443,10 @@ void CameraSource::closeLocked() {
         auto* reader = static_cast<AImageReader*>(mReader);
         AImageReader_setImageListener(reader, nullptr);
     }
+    if (mPreviewReader != nullptr) {
+        auto* previewReader = static_cast<AImageReader*>(mPreviewReader);
+        AImageReader_setImageListener(previewReader, nullptr);
+    }
     if (mSession != nullptr) {
         auto* session = static_cast<ACameraCaptureSession*>(mSession);
         ACameraCaptureSession_stopRepeating(session);
@@ -464,11 +493,16 @@ void CameraSource::closeLocked() {
         ACaptureSessionOutput_free(static_cast<ACaptureSessionOutput*>(mOutput));
         mOutput = nullptr;
     }
-    if (mRenderWindow != nullptr) {
-        ANativeWindow_release(mRenderWindow);
+    ANativeWindow* windowToRelease = nullptr;
+    {
+        std::lock_guard<std::mutex> cbLock(mCallbackLock);
+        windowToRelease = mRenderWindow;
         mRenderWindow = nullptr;
+        mCallback = nullptr;
     }
-    mCallback = nullptr;
+    if (windowToRelease != nullptr) {
+        ANativeWindow_release(windowToRelease);
+    }
 }
 
 void CameraSource::stop() {

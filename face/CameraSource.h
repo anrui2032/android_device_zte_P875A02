@@ -53,11 +53,12 @@ class CameraSource {
     static void onPreviewImage(void* ctx, AImageReader* reader);
 
     void handleImage(AImageReader* reader);
-    void renderPreview(const uint8_t* nv21, int32_t width, int32_t height);
+    void renderPreview(ANativeWindow* window, const uint8_t* nv21, int32_t width, int32_t height);
     void closeLocked();
 
     std::atomic<bool> mRunning{false};
     std::mutex mLock;
+    std::mutex mCallbackLock;
     FrameCallback mCallback;
     Orientation mOrientation = Orientation::UP;
     int32_t mSensorOrientation = 0;

@@ -68,16 +68,18 @@ bool Session::saveAttention(bool enabled) {
 }
 
 void Session::applyAttention() {
-    mAttention = loadAttention();
-    mEngine.setAttention(mAttention);
+    const bool enabled = loadAttention();
+    mAttention = enabled;
+    mEngine.setAttention(enabled);
 }
 
 Session::~Session() {
+    mClosed = true;
+    mDone = true;
+    mOp = Op::NONE;
     stopCamera();
     stopWorker();
-    if (mStopThread.joinable()) {
-        mStopThread.join();
-    }
+    joinStopThread();
     mEngine.deinit();
 }
 
@@ -118,20 +120,37 @@ void Session::reportError(Error e, int32_t vendor) {
     }
 }
 
-void Session::stopCamera() {
-    if (mStopThread.joinable()) {
-        mStopThread.join();
+void Session::joinStopThread() {
+    std::thread toJoin;
+    {
+        std::lock_guard<std::mutex> lock(mStopMutex);
+        mCancelStopDelay = true;
+        toJoin = std::move(mStopThread);
     }
+    mStopCv.notify_all();
+    if (toJoin.joinable()) {
+        toJoin.join();
+    }
+}
+
+void Session::stopCamera() {
+    joinStopThread();
     mCamera.stop();
 }
 
-void Session::scheduleCameraStop() {
-    if (mStopThread.joinable()) {
-        mStopThread.join();
-    }
-    mStopThread = std::thread([this] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        mCamera.stop();
+void Session::scheduleCameraStop(uint64_t gen) {
+    joinStopThread();
+    std::lock_guard<std::mutex> lock(mStopMutex);
+    mCancelStopDelay = false;
+    mStopThread = std::thread([this, gen] {
+        std::unique_lock<std::mutex> lk(mStopMutex);
+        mStopCv.wait_for(lk, std::chrono::milliseconds(100),
+                         [this, gen] { return mCancelStopDelay || mOpGen.load() != gen; });
+        const bool shouldStop = !mCancelStopDelay && mOpGen.load() == gen;
+        lk.unlock();
+        if (shouldStop) {
+            mCamera.stop();
+        }
     });
 }
 
@@ -165,9 +184,10 @@ ndk::ScopedAStatus Session::enroll(
     const keymaster::HardwareAuthToken&, EnrollmentType, const std::vector<Feature>&,
     const std::optional<::aidl::android::hardware::common::NativeHandle>&,
     std::shared_ptr<common::ICancellationSignal>* out) {
+    std::lock_guard<std::mutex> lock(mLock);
     const uint64_t gen = ++mOpGen;
     *out = makeCancel(gen);
-    if (mUserId != 0) {
+    if (mClosed.load() || mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
@@ -178,14 +198,17 @@ ndk::ScopedAStatus Session::enroll(
     applyAttention();
 
     stopCamera();
-    mDone = false;
-    mOp = Op::ENROLL;
-    mEnrollSucceeded = false;
-    mEnrollFaceId = 0;
-    mEnrollRemaining = 0;
-    mEnrollFinalDelay = 0;
-    if (!mCamera.start(nullptr, [this](const uint8_t* d, int32_t w, int32_t h,
-                                       CameraSource::Orientation o) { onFrame(d, w, h, o); })) {
+    {
+        std::lock_guard<std::mutex> frameLock(mFrameMutex);
+        mPendingFrame.reset();
+        mDone = false;
+        mOp = Op::ENROLL;
+    }
+    mFrameCv.notify_one();
+    if (!mCamera.start(nullptr, [this, gen](const uint8_t* d, int32_t w, int32_t h,
+                                            CameraSource::Orientation o) {
+            onFrame(gen, d, w, h, o);
+        })) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
@@ -195,10 +218,11 @@ ndk::ScopedAStatus Session::enroll(
 
 ndk::ScopedAStatus Session::authenticate(int64_t operationId,
                                          std::shared_ptr<common::ICancellationSignal>* out) {
+    std::lock_guard<std::mutex> lock(mLock);
     LOG(INFO) << "authenticate called user=" << mUserId;
     const uint64_t gen = ++mOpGen;
     *out = makeCancel(gen);
-    if (mUserId != 0) {
+    if (mClosed.load() || mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
@@ -208,30 +232,34 @@ ndk::ScopedAStatus Session::authenticate(int64_t operationId,
     }
     (void)operationId;
     applyAttention();
-    LOG(INFO) << "authenticate attention=" << mAttention;
+    LOG(INFO) << "authenticate attention=" << mAttention.load();
     stopCamera();
     {
-        std::lock_guard<std::mutex> lock(mFrameMutex);
+        std::lock_guard<std::mutex> frameLock(mFrameMutex);
+        mPendingFrame.reset();
         mDone = false;
         mAuthCompareFailed = false;
         mAuthDeadlineMs = nowMs() + kAuthTimeoutMs;
         mOp = Op::AUTH;
     }
     mFrameCv.notify_one();
-    if (!mCamera.start(nullptr, [this](const uint8_t* d, int32_t w, int32_t h,
-                                       CameraSource::Orientation o) { onFrame(d, w, h, o); })) {
+    if (!mCamera.start(nullptr, [this, gen](const uint8_t* d, int32_t w, int32_t h,
+                                            CameraSource::Orientation o) {
+            onFrame(gen, d, w, h, o);
+        })) {
         reportError(Error::HW_UNAVAILABLE);
     }
     return ndk::ScopedAStatus::ok();
 }
 
-void Session::onFrame(const uint8_t* nv21, int32_t width, int32_t height,
+void Session::onFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
                       CameraSource::Orientation orientation) {
-    if (mDone.load() || mOp.load() == Op::NONE) {
+    if (mDone.load() || mOp.load() == Op::NONE || mOpGen.load() != gen) {
         return;
     }
 
     auto frame = std::make_unique<Frame>();
+    frame->gen = gen;
     frame->width = width;
     frame->height = height;
     frame->orientation = orientation;
@@ -239,6 +267,9 @@ void Session::onFrame(const uint8_t* nv21, int32_t width, int32_t height,
 
     {
         std::lock_guard<std::mutex> lock(mFrameMutex);
+        if (mDone.load() || mOp.load() == Op::NONE || mOpGen.load() != gen) {
+            return;
+        }
         mPendingFrame = std::move(frame);
     }
     mFrameCv.notify_one();
@@ -250,26 +281,36 @@ void Session::workerLoop() {
         {
             std::unique_lock<std::mutex> lock(mFrameMutex);
             if (mOp.load() == Op::AUTH && !mDone.load()) {
+                const uint64_t authGen = mOpGen.load();
                 const auto deadline = std::chrono::steady_clock::time_point(
                     std::chrono::milliseconds(mAuthDeadlineMs.load()));
-                mFrameCv.wait_until(lock, deadline, [this] { return mWorkerStop || mPendingFrame; });
+                mFrameCv.wait_until(lock, deadline, [this, authGen] {
+                    return mWorkerStop || mPendingFrame || mDone.load() ||
+                           mOpGen.load() != authGen;
+                });
             } else {
-                mFrameCv.wait(lock, [this] { return mWorkerStop || mPendingFrame; });
+                mFrameCv.wait(lock, [this] {
+                    return mWorkerStop || mPendingFrame ||
+                           (mOp.load() == Op::AUTH && !mDone.load());
+                });
             }
             if (mWorkerStop) {
                 return;
             }
             if (!mPendingFrame) {
+                const uint64_t curGen = mOpGen.load();
+                const bool timedOut =
+                    mOp.load() == Op::AUTH && !mDone.load() && nowMs() >= mAuthDeadlineMs.load();
                 lock.unlock();
-                if (mOp.load() == Op::AUTH && !mDone.load() && nowMs() >= mAuthDeadlineMs.load()) {
-                    finishAuthTimeout();
+                if (timedOut) {
+                    finishAuthTimeout(curGen);
                 }
                 continue;
             }
             frame = std::move(*mPendingFrame);
             mPendingFrame.reset();
         }
-        processFrame(frame.nv21.data(), frame.width, frame.height, frame.orientation);
+        processFrame(frame.gen, frame.nv21.data(), frame.width, frame.height, frame.orientation);
     }
 }
 
@@ -277,6 +318,7 @@ void Session::stopWorker() {
     {
         std::lock_guard<std::mutex> lock(mFrameMutex);
         mWorkerStop = true;
+        mPendingFrame.reset();
     }
     mFrameCv.notify_all();
     if (mWorker.joinable()) {
@@ -284,23 +326,30 @@ void Session::stopWorker() {
     }
 }
 
-void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
+void Session::processFrame(uint64_t gen, const uint8_t* nv21, int32_t width, int32_t height,
                            CameraSource::Orientation orientation) {
-    if (mDone.load() || mOp.load() == Op::NONE) {
+    if (mDone.load() || mOp.load() == Op::NONE || mOpGen.load() != gen) {
         return;
     }
     const Op op = mOp.load();
     int32_t faceId = (op == Op::AUTH) ? 0 : -1;
+    if (op == Op::ENROLL && mEnrollGen != gen) {
+        mEnrollGen = gen;
+        mEnrollSucceeded = false;
+        mEnrollFaceId = 0;
+        mEnrollRemaining = 0;
+        mEnrollFinalDelay = 0;
+    }
     if (op == Op::ENROLL && mEnrollSucceeded) {
         if (mEnrollRemaining > 1) {
             mEnrollRemaining = std::max(1, mEnrollRemaining - 5);
             mCb->onEnrollmentProgress(0, mEnrollRemaining);
         } else {
             if (++mEnrollFinalDelay >= 15) {
-                if (!mDone.exchange(true)) {
+                if (mOpGen.load() == gen && !mDone.exchange(true)) {
                     mOp = Op::NONE;
                     mCb->onEnrollmentProgress(mEnrollFaceId, 0);
-                    scheduleCameraStop();
+                    scheduleCameraStop(gen);
                 }
             }
         }
@@ -311,6 +360,9 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
             mEngine.enroll(nv21, width, height, static_cast<int32_t>(orientation), &faceId);
         LOG(INFO) << "enroll frame " << width << "x" << height << " ret=" << ret
                   << " faceId=" << faceId;
+        if (mOpGen.load() != gen || mDone.load()) {
+            return;
+        }
         if (ret == 0) {
             mEnrollSucceeded = true;
             mEnrollFaceId = faceId;
@@ -327,24 +379,27 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
                 LOG(INFO) << "enroll retry";
             }
         } else {
-            if (!mDone.exchange(true)) {
+            if (mOpGen.load() == gen && !mDone.exchange(true)) {
                 reportError(Error::UNABLE_TO_PROCESS, ret);
             }
         }
     } else if (op == Op::AUTH) {
         if (nowMs() >= mAuthDeadlineMs.load()) {
-            finishAuthTimeout();
+            finishAuthTimeout(gen);
             return;
         }
         const int32_t ret =
             mEngine.authenticate(nv21, width, height, static_cast<int32_t>(orientation), &faceId);
         LOG(INFO) << "auth frame ret=" << ret << " faceId=" << faceId
                   << " orientation=" << static_cast<int32_t>(orientation);
+        if (mOpGen.load() != gen || mDone.load()) {
+            return;
+        }
         if (ret == 0) {
-            if (!mDone.exchange(true)) {
+            if (mOpGen.load() == gen && !mDone.exchange(true)) {
                 mOp = Op::NONE;
                 mCb->onAuthenticationSucceeded(faceId, keymaster::HardwareAuthToken{});
-                scheduleCameraStop();
+                scheduleCameraStop(gen);
             }
         } else if (ret > 0) {
             if (ret == 201) {
@@ -360,15 +415,15 @@ void Session::processFrame(const uint8_t* nv21, int32_t width, int32_t height,
                 LOG(INFO) << "auth retry";
             }
         } else {
-            if (!mDone.exchange(true)) {
+            if (mOpGen.load() == gen && !mDone.exchange(true)) {
                 reportError(Error::UNABLE_TO_PROCESS, ret);
             }
         }
     }
 }
 
-void Session::finishAuthTimeout() {
-    if (mDone.exchange(true)) {
+void Session::finishAuthTimeout(uint64_t gen) {
+    if (mOpGen.load() != gen || mDone.exchange(true)) {
         return;
     }
     mOp = Op::NONE;
@@ -379,7 +434,7 @@ void Session::finishAuthTimeout() {
         LOG(INFO) << "auth window ended: no compare failure";
         reportError(Error::TIMEOUT);
     }
-    scheduleCameraStop();
+    scheduleCameraStop(gen);
 }
 
 ndk::ScopedAStatus Session::detectInteraction(std::shared_ptr<common::ICancellationSignal>* out) {
@@ -389,6 +444,11 @@ ndk::ScopedAStatus Session::detectInteraction(std::shared_ptr<common::ICancellat
 }
 
 ndk::ScopedAStatus Session::enumerateEnrollments() {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (mClosed.load()) {
+        reportError(Error::UNABLE_TO_PROCESS);
+        return ndk::ScopedAStatus::ok();
+    }
     if (mUserId != 0) {
         mCb->onEnrollmentsEnumerated({});
         return ndk::ScopedAStatus::ok();
@@ -412,6 +472,11 @@ ndk::ScopedAStatus Session::enumerateEnrollments() {
 }
 
 ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& ids) {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (mClosed.load()) {
+        reportError(Error::UNABLE_TO_REMOVE);
+        return ndk::ScopedAStatus::ok();
+    }
     std::string id_list;
     for (int32_t id : ids) {
         if (!id_list.empty()) {
@@ -443,18 +508,28 @@ ndk::ScopedAStatus Session::removeEnrollments(const std::vector<int32_t>& ids) {
 }
 
 ndk::ScopedAStatus Session::getFeatures() {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (mClosed.load()) {
+        reportError(Error::UNABLE_TO_PROCESS);
+        return ndk::ScopedAStatus::ok();
+    }
     applyAttention();
     std::vector<Feature> features;
-    if (mAttention) {
+    if (mAttention.load()) {
         features.push_back(Feature::REQUIRE_ATTENTION);
     }
-    LOG(INFO) << "getFeatures attention=" << mAttention;
+    LOG(INFO) << "getFeatures attention=" << mAttention.load();
     mCb->onFeaturesRetrieved(features);
     return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Session::setFeature(const keymaster::HardwareAuthToken&, Feature feature,
                                        bool enabled) {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (mClosed.load()) {
+        reportError(Error::UNABLE_TO_PROCESS);
+        return ndk::ScopedAStatus::ok();
+    }
     if (feature != Feature::REQUIRE_ATTENTION) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
@@ -558,13 +633,18 @@ ndk::ScopedAStatus Session::resetLockout(const keymaster::HardwareAuthToken&) {
 }
 
 ndk::ScopedAStatus Session::close() {
+    std::lock_guard<std::mutex> lock(mLock);
+    mClosed = true;
+    ++mOpGen;
+    mDone = true;
+    mOp = Op::NONE;
     stopCamera();
     stopWorker();
-    if (mStopThread.joinable()) {
-        mStopThread.join();
-    }
+    joinStopThread();
     mEngine.deinit();
-    mCb->onSessionClosed();
+    if (mCb) {
+        mCb->onSessionClosed();
+    }
     return ndk::ScopedAStatus::ok();
 }
 
@@ -593,9 +673,10 @@ ndk::ScopedAStatus Session::onContextChanged(const OperationContext&) {
 
 ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
                                               std::shared_ptr<common::ICancellationSignal>* out) {
+    std::lock_guard<std::mutex> lock(mLock);
     const uint64_t gen = ++mOpGen;
     *out = makeCancel(gen);
-    if (mUserId != 0) {
+    if (mClosed.load() || mUserId != 0) {
         reportError(Error::UNABLE_TO_PROCESS);
         return ndk::ScopedAStatus::ok();
     }
@@ -615,15 +696,18 @@ ndk::ScopedAStatus Session::enrollWithOptions(const FaceEnrollOptions& options,
         }
     }
 
-    mDone = false;
-    mOp = Op::ENROLL;
-    mEnrollSucceeded = false;
-    mEnrollFaceId = 0;
-    mEnrollRemaining = 0;
-    mEnrollFinalDelay = 0;
+    {
+        std::lock_guard<std::mutex> frameLock(mFrameMutex);
+        mPendingFrame.reset();
+        mDone = false;
+        mOp = Op::ENROLL;
+    }
+    mFrameCv.notify_one();
     LOG(INFO) << "enroll options preview=" << (window != nullptr);
-    if (!mCamera.start(window, [this](const uint8_t* d, int32_t w, int32_t h,
-                                      CameraSource::Orientation o) { onFrame(d, w, h, o); })) {
+    if (!mCamera.start(window, [this, gen](const uint8_t* d, int32_t w, int32_t h,
+                                           CameraSource::Orientation o) {
+            onFrame(gen, d, w, h, o);
+        })) {
         reportError(Error::HW_UNAVAILABLE);
         return ndk::ScopedAStatus::ok();
     }
